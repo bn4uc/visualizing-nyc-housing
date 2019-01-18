@@ -45,18 +45,6 @@ deeds <- deeds %>% mutate(`DOC. AMOUNT` = statar::winsorize(deeds$`DOC. AMOUNT`,
 #need to combine with real property legals in order to use property type
 #could color that plot by property type^
 
-#try to see if different types of docs occur more at certain times
-#anything with time? 
-#number of sales per month? 
-#number of sales per year (deed transfers)
-#mortgage amounts- 
-#average number of mortgages recorded on a property
-#something with unique identifying
-#age of deeds- cant just be 2017
-#sales by month, by borough (a line for each borough)
-#see what percent of properties are mortgaged? but deed will only be present in year recorded
-
-
 #number of recordings for each type of document
 ACRIS_2017 %>% group_by(`DOC. TYPE DESCRIPTION`) %>% summarise(n = n()) %>% View()
 
