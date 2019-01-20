@@ -53,10 +53,11 @@ ACRIS17 <- ACRIS17 %>%
 ACRIS17 <- ACRIS17 %>% mutate(`DOCUMENT ID` = as.character(`DOCUMENT ID`))
 ACRIS17 <- left_join(ACRIS17, ACRIS_legals, by = "DOCUMENT ID")
 
+#merge with property
 property_codes <- read_csv("ACRIS_-_Property_Types_Codes.csv")
-
 ACRIS17 <- ACRIS17 %>% left_join(property_codes, by = "PROPERTY TYPE")
 
+#removing duplicates
 ACRIS17$BOROUGH.y <- NULL
 ACRIS17$`RECORD TYPE.x` <- NULL
 ACRIS17$`RECORD TYPE.y` <- NULL
@@ -65,6 +66,7 @@ ACRIS17$`RECORD TYPE.y` <- NULL
 ACRIS17 <- ACRIS17 %>% mutate(`GOOD THROUGH DATE.y` = mdy(`GOOD THROUGH DATE.y`))
 ACRIS17 %>% filter(`GOOD THROUGH DATE.x` != `GOOD THROUGH DATE.y`) %>% nrow()
 
+#create df for deed transers only
 deed_transfers17 <- ACRIS17 %>% 
   filter(str_detect(`DOC. TYPE DESCRIPTION`, "DEED") & `% TRANSFERRED`== 100)
 
@@ -85,7 +87,6 @@ graph_deedtransfers_permonth <- deed_transfers17 %>%
 ggsave("graph_deedtransfers_permonth.pdf")
 
 ####plotting average amounts per deed transfer per borough####
-
 deed_transfers17 %>% 
   mutate(month = month(`DOC. DATE`, label = TRUE)) %>% 
   group_by(month, BOROUGH) %>% 
@@ -167,29 +168,6 @@ ACRIS17 %>% filter(`DOC. TYPE DESCRIPTION` %in%
                                 y = n, fill = `DOC. TYPE DESCRIPTION`), stat = "identity") +
   facet_wrap(vars(BOROUGH))
 
-#now look at sales by type of property re deed transfers
-descriptions_over1k <- c("SINGLE RESIDENTIAL CONDO UNIT",
-                         "DWELLING ONLY - 1 FAMILY",
-                         "DWELLING ONLY - 2 FAMILY",
-                         "DWELLING ONLY - 3 FAMILY",
-                         "COMMERCIAL CONDO UNIT(S)",
-                         "1-2 FAMILY DWELLING WITH ATTACHED GARAGE",
-                         "COMMERCIAL REAL ESTATE",
-                         "TIMESHARE",
-                         "APARTMENT BUILDING",
-                         "1-3 FAMILY WITH STORE / OFFICE",
-                         "PARKING SPACE",
-                         "DWELLING ONLY - 4 FAMILY")
-
-#Property types and the number of each by borough
-ACRIS17 %>% 
-  filter(str_detect(`DOC. TYPE DESCRIPTION`, "DEED") & `% TRANSFERRED`== 100 &
-           DESCRIPTION %in% descriptions_over1k) %>%
-  group_by(DESCRIPTION, BOROUGH.x) %>% 
-  summarise(n = n()) %>% ggplot() + 
-  geom_jitter(aes(x = reorder(DESCRIPTION, -n), y = n, color = BOROUGH.x)) + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 #lets look at property types and amounts of sales 
 
 #top 10 types of properties re deed transfers
@@ -209,6 +187,16 @@ descriptions_top5 <- c("SINGLE RESIDENTIAL CONDO UNIT",
                        "DWELLING ONLY - 2 FAMILY",                 
                        "DWELLING ONLY - 3 FAMILY",                  
                        "COMMERCIAL CONDO UNIT(S)")
+
+#property types and the number of each by borough
+ACRIS17 %>% 
+  filter(str_detect(`DOC. TYPE DESCRIPTION`, "DEED") & `% TRANSFERRED`== 100 &
+           DESCRIPTION %in% descriptions_top10) %>%
+  group_by(DESCRIPTION, BOROUGH.x) %>% 
+  summarise(n = n()) %>% ggplot() + 
+  geom_jitter(aes(x = reorder(DESCRIPTION, -n), y = n, color = BOROUGH.x)) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 #property values by type of property in 2017, for deed transfers top 5 n
 deed_transfers17 %>% filter(DESCRIPTION %in% descriptions_top5) %>% 
