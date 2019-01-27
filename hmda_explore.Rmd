@@ -78,7 +78,7 @@ census_tracts <- rgdal::readOGR("/Volumes/SPACESHIP/data_viz/data_scripts/visual
 
 ##Home Mortgage Disclosure Act Data - Exploration in New York City 
 
-Home Mortgage Disclosure Act data provides an insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and where most are denied, and more. 
+Home Mortgage Disclosure Act data provides insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and where most are denied, and more. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #number of loans apps by census tract
@@ -130,7 +130,7 @@ ggplot() +
 ```
 
 
-The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in lean approval rates across the city, there is not a clear distinction of certain areas with higher approval rates, for example, thre are high approval tracts in Brooklyn and the Bronx that are not know for being high income. In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
+The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in loan approval rates across the city, there is not a clear distinction between certain areas with higher approval rates, for example, there are high approval tracts in Brooklyn and the Bronx that are not know for being high income (as one might expect). In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #approval rates by race by census tract
@@ -193,7 +193,7 @@ ggplot() +
 ```
 
 
-This map looks at approval rates for Blacks and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding why this is, would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
+This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 apps_per_year_outcome_race <- hmda_ny_5yrs %>% 
@@ -224,7 +224,7 @@ ggplot(approval_rate_year_race,
 ```
 
 
-I was also curious whether loan approval rates by race have changed over the last five years for each of the racial groups. This graph shows that Asians and Whites have consistently had the highest approval rates. The unknown category are people who did not choose the dislose their race, however, given that they have the highest approval rates, there is a large chance that this group is made up mostly of white applicants. Most races have had consistent approval rates over the last five years, however, American Indians and Native Alaskans saw a shart decrease in their loan approval rates in 2016, however their rates have returned to the pre-2016 average. This graph displaces important differences in racial approval rates and inspires further research on whether these differences are due to historical differences in wealth or racial discrimination in lending. 
+I was also curious whether loan approval rates by race have changed over the last five years. This graph shows that Asians and Whites have consistently had the highest approval rates. The unknown category is made up of people who did not choose the dislose their race in their mortgage application, however, given that they have the highest approval rates, there is a large chance that this group is made up mostly of White applicants. Most races have had consistent approval rates over the last five years, however, American Indians and Native Alaskans saw a sharp decrease in their loan approval rates in 2016, however their rates have returned to the pre-2016 average. This graph displays important differences in racial approval rates and inspires further research on whether these differences are due to historical differences in wealth or racial discrimination in lending. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #denial reasons over time
@@ -246,7 +246,7 @@ denial_reasons_year %>%
 ```
 
 
-In order to better understand why different races are denied loans, I look at denial reasons over time, and differences in denial reasons for different races. The following graph explores whether and how denial reasons have changed over time. This graph shows that an insuffiencient debt-to-income ratio is the highest frequency reason for denial. A determination that the property of the value is not high enough to serve as collateral for the requested loan amount ties for the second highest reason for denial, along with a poor credit history. While the differences in these rates are minor, the highest frequcny rate suggests that many people are applying for mortgages that the banks believe they are unable to afford on their current incomes. Is this because the property values are high and people want to remain in a certain area or is this because people are simply attracted to things outside of their price ranges? These are some of the research questions raised by the graph. 
+In order to better understand why different races are denied loans, I look at denial reasons over time, and differences in denial reasons for different races. The following graph explores whether and how denial reasons have changed over time. This graph shows that an insuffiencient debt-to-income ratio is the highest frequency reason for denial. A determination that the property of the value is not high enough to serve as collateral for the requested loan amount ties for the second most frequent reason for denial, along with a poor credit history. While the differences in these rates of denial are minor, the highest frequcny rate suggests that many people are applying for mortgages that the banks believe they are unable to afford on their current incomes. Is this because the property values are high and people want to remain in a certain area or is this because people are simply attracted to things outside of their price ranges? These are some of the research questions raised by the graph. 
 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
@@ -278,4 +278,4 @@ denial_reasons_race %>%
 ```
 
 
-Having seen the overall denial rates, the following graph attempts to visualize how the racial breakdown differs from the averages. Asians and Whites are very rarely denied because of their credit histories while Blacks, Native Americans, and Pacific Islanders are most frequently denied because of their credit histories. This begs a better understanding of why certain racial groups would have worse credit histories, whether this measure if being used to deny people because it is more subjective than other measures, or what can be done to improve the credit histories of historically disadvantaged groups.
+Having seen the overall denial rates, the following graph attempts to visualize how the racial breakdown of denial reasons differs from the averages. Asians and Whites are very rarely denied because of their credit histories while Blacks, Native Americans, and Pacific Islanders are most frequently denied because of their credit histories. This begs a better understanding of why certain racial groups would have worse credit histories, whether this measure if being used to deny people because it is more subjective than other measures, or what can be done to improve the credit histories of historically disadvantaged groups.
