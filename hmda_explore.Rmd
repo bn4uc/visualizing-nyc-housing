@@ -1,0 +1,281 @@
+---
+title: "hmda_explore.R"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+library(maptools)
+library(ggmap)
+library(RColorBrewer)
+library(broom)
+library(ggrepel)
+
+```
+
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#loading data and making preliminary changes 
+options("scipen"=100, "digits"=4)
+
+hmda13_ny <- read_csv("hmda13_ny.csv")
+hmda14_ny <- read_csv("hmda14_ny.csv")
+hmda15_ny <- read_csv("hmda15_ny.csv")
+hmda16_ny <- read_csv("hmda16_ny.csv")
+hmda17_ny <- read_csv("hmda17_ny.csv")
+
+hmda_ny_3yrs <- rbind(hmda15_ny, hmda16_ny, hmda17_ny) %>%
+  mutate(census_tract_number = gsub("\\.", "", census_tract_number))
+
+hmda_ny_5yrs <- rbind(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny) %>%
+  mutate(census_tract_number = gsub("\\.", "", census_tract_number))
+
+#create a new column for approval/denial
+hmda_ny_3yrs <- hmda_ny_3yrs %>% 
+  mutate(outcome = ifelse(action_taken_name %in% 
+                            c("Application approved but not accepted",
+                              "Loan originated", "Loan purchased by the institution"),"Approved", 
+                          ifelse(action_taken_name %in%
+                                   c("Application denied by financial institution",
+                                     "Preapproval request denied by financial institution"),
+                                 "Denied", "Other")))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(outcome = ifelse(action_taken_name %in% 
+                            c("Application approved but not accepted",
+                              "Loan originated", "Loan purchased by the institution"),"Approved", 
+                          ifelse(action_taken_name %in%
+                                   c("Application denied by financial institution",
+                                     "Preapproval request denied by financial institution"),
+                                 "Denied", "Other")))
+
+#rename the values for applicant race
+hmda_ny_3yrs$applicant_race_name_1[which(hmda_ny_3yrs$applicant_race_name_1 %in%
+                                           c("Information not provided by applicant in mail, Internet, or telephone application",
+                                             "Not applicable"))] <- "Unknown"
+hmda_ny_5yrs$applicant_race_name_1[which(hmda_ny_5yrs$applicant_race_name_1 %in%
+                                           c("Information not provided by applicant in mail, Internet, or telephone application",
+                                             "Not applicable"))] <- "Unknown"
+
+#regroup races
+hmda_ny_3yrs <- hmda_ny_3yrs %>% mutate(race_alternative = applicant_race_name_1)
+hmda_ny_3yrs$race_alternative[which(hmda_ny_3yrs$race_alternative %in% 
+                                      c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(race_alternative = applicant_race_name_1)
+hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in% 
+                                      c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
+
+census_tracts <- rgdal::readOGR("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
+
+```
+
+##Home Mortgage Disclosure Act Data - Exploration in New York City 
+
+Home Mortgage Disclosure Act data provides an insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and where most are denied, and more. 
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#number of loans apps by census tract
+apps_by_tract <- hmda_ny_5yrs %>% 
+  group_by(census_tract_number) %>% 
+  summarise(total_apps = n())
+
+#approvals by tract
+approval_counts_by_tract <- hmda_ny_5yrs %>% 
+  filter(outcome == "Approved") %>% 
+  group_by(census_tract_number) %>% 
+  summarise(total_approved = n())
+
+approval_rates_by_tract <- 
+  approval_counts_by_tract %>% 
+  left_join(apps_by_tract, by = "census_tract_number") %>% 
+  mutate(approval_rate = total_approved/total_apps)
+
+census_tract_merged <- sp::merge(x = census_tracts,
+                                       y = approval_rates_by_tract,
+                                       by.x ="ct2010", by.y= "census_tract_number", all.x = TRUE)
+
+#dealing with ggplot
+#tidy the spatial dataframe, make it into a dataframe
+census_tracts_merged_df <- tidy(census_tract_merged)
+#need to re-ad datat to it, by create a category it can merge with our data
+census_tract_merged$polyID <- sapply(slot(census_tract_merged, "polygons"),
+                                           function(x) slot(x, "ID"))
+#merge back with our data
+census_tracts_merged_df <- merge(census_tracts_merged_df, 
+                                       census_tract_merged, 
+                                       by.x = "id", by.y="polyID")
+
+census_tracts_merged_df$breaks <- cut(census_tracts_merged_df$approval_rate, c(0, .25, .5, .75, 1)) 
+
+#plot- approval rates by census block #### 
+ggplot() + 
+  geom_polygon(data = census_tracts_merged_df,
+               aes(x = long, y = lat, group = group, fill = breaks)) + 
+  scale_fill_brewer("Approval Rate", palette = "OrRd") +
+  labs(title = "Very few census tracts in New York City have average loan approval rates above 75%", 
+       subtitle = "Most census tracts have approval rates between 50% and 75%", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  theme(line = element_blank(),                          
+        axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_blank())
+
+```
+
+
+The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in lean approval rates across the city, there is not a clear distinction of certain areas with higher approval rates, for example, thre are high approval tracts in Brooklyn and the Bronx that are not know for being high income. In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#approval rates by race by census tract
+approval_counts_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Approved") %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_approved = n())
+
+df_for_chloropleth_race_approval <- hmda_ny_5yrs %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_apps = n()) %>% 
+  left_join(approval_counts_by_race, 
+            by = c("census_tract_number", "applicant_race_name_1")) %>%
+  mutate(approval_rate = total_approved/total_apps)
+
+df_for_chloropleth_black_approval <- hmda_ny_5yrs %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_apps = n()) %>% 
+  left_join(approval_counts_by_race, 
+            by = c("census_tract_number", "applicant_race_name_1")) %>%
+  mutate(approval_rate = total_approved/total_apps) %>%
+  filter(applicant_race_name_1== "Black or African American")
+
+df_for_chloropleth_black_approval <- df_for_chloropleth_black_approval %>% 
+  mutate(approval_rate_round = round(approval_rate, 2))
+
+#upload shapefiles
+census_tracts <- rgdal::readOGR("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
+
+census_tract_merged_black <- sp::merge(x = census_tracts,
+                                       y = df_for_chloropleth_black_approval,
+                                       by.x ="ct2010", by.y= "census_tract_number", all.x = TRUE)
+
+#dealing with ggplot
+#tidy the spatial dataframe, make it into a dataframe
+census_tracts_merged_black_df <- tidy(census_tract_merged_black)
+#need to re-ad datat to it, by create a category it can merge with our data
+census_tract_merged_black$polyID <- sapply(slot(census_tract_merged_black, "polygons"),
+                               function(x) slot(x, "ID"))
+#merge back with our data
+census_tracts_merged_black_df <- merge(census_tracts_merged_black_df, 
+                          census_tract_merged_black, 
+                          by.x = "id", by.y="polyID")
+
+census_tracts_merged_black_df$breaks <- cut(census_tracts_merged_black_df$approval_rate, c(0,.25,.5,.75,1)) 
+
+#plot- black loan approval rates map ####
+ggplot() + 
+  geom_polygon(data = census_tracts_merged_black_df,
+               aes(x = long, y = lat, group = group, fill = breaks)) + 
+  scale_fill_brewer("Approval Rate", palette = "OrRd") +
+  labs(title = "Highest loan approval rates for Blacks are in \nStaten Island and Queens", 
+       subtitle = "When compared to approval rates that do not consider race, \nmost census tracts have lower approval rates for Blacks", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB") + 
+  theme(line = element_blank(),                          
+        axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_blank())
+
+```
+
+
+This map looks at approval rates for Blacks and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding why this is, would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+apps_per_year_outcome_race <- hmda_ny_5yrs %>% 
+  group_by(as_of_year, race_alternative, outcome) %>%
+  summarise(apps_per_year_outcome_race = n())
+
+apps_per_year_outcome <- hmda_ny_5yrs %>% 
+  group_by(as_of_year, race_alternative) %>% 
+  summarise(apps_per_year_outcome = n())
+
+#approval rates over the five years ####
+approval_rate_year_race <- apps_per_year_outcome_race %>% 
+  left_join(apps_per_year_outcome, 
+            by = c("as_of_year", "race_alternative")) %>% 
+  mutate(outcome_rate = apps_per_year_outcome_race/apps_per_year_outcome) %>%
+  filter(outcome == "Approved") 
+
+ggplot(approval_rate_year_race, 
+       aes(x = as_of_year, y = outcome_rate, color = race_alternative)) +
+  geom_point() + geom_line() + 
+  scale_x_continuous(breaks = c(2013, 2014, 2015, 2016, 2017)) + 
+  labs(title = "Loan approval rates for Blacks are consistently below Whites and Asians", 
+       subtitle = "Despite a sharp decrease for American Indians in 2016, \nloan approval rates have remained relatively consistent over the last 5 years", 
+       x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  geom_text_repel(data = filter(approval_rate_year_race, as_of_year == 2017),
+                  aes(x = 2017, label=race_alternative)) + 
+  theme(legend.position = "none")
+```
+
+
+I was also curious whether loan approval rates by race have changed over the last five years for each of the racial groups. This graph shows that Asians and Whites have consistently had the highest approval rates. The unknown category are people who did not choose the dislose their race, however, given that they have the highest approval rates, there is a large chance that this group is made up mostly of white applicants. Most races have had consistent approval rates over the last five years, however, American Indians and Native Alaskans saw a shart decrease in their loan approval rates in 2016, however their rates have returned to the pre-2016 average. This graph displaces important differences in racial approval rates and inspires further research on whether these differences are due to historical differences in wealth or racial discrimination in lending. 
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#denial reasons over time
+denial_reasons_year <- hmda_ny_5yrs %>% filter(outcome == "Denied", !is.na(denial_reason_name_1)) %>% 
+  group_by(as_of_year, denial_reason_name_1) %>% summarise(count_per_reason = n())
+
+denial_count_year <- hmda_ny_5yrs %>% filter(outcome == "Denied", !is.na(denial_reason_name_1)) %>% 
+  group_by(as_of_year) %>% summarise(tot_denied = n())
+
+#denial reasons changing over time ####
+denial_reasons_year %>% 
+  left_join(denial_count_year, by = "as_of_year") %>% 
+  mutate(denial_rate = count_per_reason/tot_denied) %>% 
+  ggplot(aes(x = as_of_year, y = denial_rate, color = denial_reason_name_1)) + 
+  geom_point() + geom_line() + labs(title = "Debt-to-Income Ratio is consistently the most frequent reason for denial", 
+                                    subtitle = "Insufficient Collateral and Incomplete Applications have been decreasing as denial reasons \n while Credit History-related denials have been increasing", 
+                                    caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
+                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_fill_discrete(name = "Denial Reason")
+```
+
+
+In order to better understand why different races are denied loans, I look at denial reasons over time, and differences in denial reasons for different races. The following graph explores whether and how denial reasons have changed over time. This graph shows that an insuffiencient debt-to-income ratio is the highest frequency reason for denial. A determination that the property of the value is not high enough to serve as collateral for the requested loan amount ties for the second highest reason for denial, along with a poor credit history. While the differences in these rates are minor, the highest frequcny rate suggests that many people are applying for mortgages that the banks believe they are unable to afford on their current incomes. Is this because the property values are high and people want to remain in a certain area or is this because people are simply attracted to things outside of their price ranges? These are some of the research questions raised by the graph. 
+
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+num_denied_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Denied", !is.na(denial_reason_name_1)) %>%
+  group_by(applicant_race_name_1) %>% 
+  summarise(tot_apps_denied = n())
+
+denial_reasons_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Denied", !is.na(denial_reason_name_1)) %>% 
+  group_by(applicant_race_name_1, denial_reason_name_1) %>% 
+  summarise(denied_by_reason = n())
+
+#denial reasons rates race ####
+denial_reasons_race %>% 
+  left_join(num_denied_by_race, by = "applicant_race_name_1") %>%
+  mutate(denial_rate = denied_by_reason/tot_apps_denied) %>% 
+  ggplot() + 
+  geom_bar(aes(x = applicant_race_name_1, 
+               y = denial_rate, 
+               fill = denial_reason_name_1),
+           stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+  labs(title = "Credit History and Debt-to-Income Ratio are the two most frequent loan denial reasons", 
+       subtitle = "However, the distribution of reasons differ significantly by race", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
+       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")
+
+```
+
+
+Having seen the overall denial rates, the following graph attempts to visualize how the racial breakdown differs from the averages. Asians and Whites are very rarely denied because of their credit histories while Blacks, Native Americans, and Pacific Islanders are most frequently denied because of their credit histories. This begs a better understanding of why certain racial groups would have worse credit histories, whether this measure if being used to deny people because it is more subjective than other measures, or what can be done to improve the credit histories of historically disadvantaged groups.
