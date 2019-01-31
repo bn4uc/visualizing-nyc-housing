@@ -125,7 +125,7 @@ ggplot() +
   theme(line = element_blank(),                          
         axis.text=element_blank(),                      
         axis.title=element_blank(),                      
-        panel.background = element_blank())
+        panel.background = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fed98e', '#fe9929', '#cc4c02'))
 
 ```
 
@@ -188,7 +188,7 @@ ggplot() +
   theme(line = element_blank(),                          
         axis.text=element_blank(),                      
         axis.title=element_blank(),                      
-        panel.background = element_blank())
+        panel.background = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fed98e', '#fe9929', '#cc4c02'))
 
 ```
 
@@ -242,7 +242,7 @@ denial_reasons_year %>%
   geom_point() + geom_line() + labs(title = "Debt-to-Income Ratio is consistently the most frequent reason for denial", 
                                     subtitle = "Insufficient Collateral and Incomplete Applications have been decreasing as denial reasons \n while Credit History-related denials have been increasing", 
                                     caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_fill_discrete(name = "Denial Reason")
+                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_color_manual(values = c('#E8291A', '#004358', '#1f8a70', '#BEDB39', '#FFE11A', '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
 ```
 
 
@@ -273,8 +273,7 @@ denial_reasons_race %>%
   labs(title = "Credit History and Debt-to-Income Ratio are the two most frequent loan denial reasons", 
        subtitle = "However, the distribution of reasons differ significantly by race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")
-
+       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A', '#004358', '#1f8a70', '#BEDB39', '#FFE11A', '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
 ```
 
 
