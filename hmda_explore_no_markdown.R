@@ -383,3 +383,69 @@ denial_reasons_year %>%
 #circle packing for approval and denial by race for each year 
 install.packages("packcircles")
 library(packcircles)
+
+data <- data.frame(group = paste("Group", letters[1:20]), value = sample(seq(1,100), 20))
+packing <- circleProgressiveLayout(data$value, sizetype = 'area')
+data <- cbind(data, packing)
+plot(data$radius, data$value)
+dat.gg <- circleLayoutVertices(packing, npoints = 50)
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id), color = "black", alpha = .6)) +
+  geom_text(data = data, aes(x,y,size = value, label = group)) + 
+  scale_size_continuous(range = c(1,4))
+
+
+
+outcome_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race)
+
+approved_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Approved")
+
+approved_race_rate <- as.data.frame(approved_race_rate)
+packing <- circleProgressiveLayout(approved_race_rate$rate, sizetype = 'area')
+approved_race_rate <- cbind(approved_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = approved_race_rate, aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + labs(title= "Approved")
+
+denied_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, race_alternative) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race_alt, by = "race_alternative") %>% 
+  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Denied")
+
+denied_race_rate <- as.data.frame(denied_race_rate)
+packing <- circleProgressiveLayout(denied_race_rate$rate, sizetype = 'area')
+denied_race_rate <- cbind(denied_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = denied_race_rate, aes(x,y,label = race_alternative)) + 
+  scale_size_continuous(range = c(1,4)) + labs(title = "Denied")
+
+other_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Other")
+
+other_race_rate <- as.data.frame(other_race_rate)
+packing <- circleProgressiveLayout(other_race_rate$rate, sizetype = 'area')
+other_race_rate <- cbind(other_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text(data = other_race_rate, aes(x,y, label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + labs(title = "Other Outcome")
