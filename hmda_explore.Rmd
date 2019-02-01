@@ -372,6 +372,12 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
 ```{r}
 #loan application outcome rates by race and year (facet_grid)
 
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
+                                             ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
+                                                    ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
+                                                           ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", NA)))))
+
+
 #total loans per quartile, year, race
 quartile_race_year <- hmda_ny_5yrs %>% 
   group_by(income_bins, race_alternative, as_of_year, county_name) %>% 
@@ -384,8 +390,12 @@ quartile_race_year_outcome <- hmda_ny_5yrs %>%
 quartile_race_year_outcome %>% 
   left_join(quartile_race_year, 
             by = c("income_bins", "race_alternative", "as_of_year", "county_name")) %>% 
-  mutate(outcome_rate = per_outcome/total) %>% filter(race_alternative %in% c("Asian", "White", "Black or African American", "Other"), county_name == "Kings County") %>% 
+  mutate(outcome_rate = per_outcome/total) %>% 
+  filter(race_alternative %in% c("Asian", "White", "Black or African American", "Other"), county_name == "Kings County", !is.na(income_bins)) %>% 
   ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
-  facet_wrap(race_alternative~income_bins) + scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + theme(text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2')) + 
-  labs(subtitle = "Loan Application Outcome Rates by Race and Year in Brooklyn", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome")
+  facet_wrap(race_alternative~income_bins) + 
+  scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+        panel.background = element_rect(fill = '#F2F5F2')) + 
+  labs(subtitle = "Loan Application Outcome Rates by Race and Year in Brooklyn", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
 ```
