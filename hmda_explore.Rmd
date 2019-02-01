@@ -35,7 +35,7 @@ hmda_ny_3yrs <- rbind(hmda15_ny, hmda16_ny, hmda17_ny) %>%
   mutate(census_tract_number = gsub("\\.", "", census_tract_number))
 
 hmda_ny_5yrs <- rbind(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny) %>%
-  mutate(census_tract_number = gsub("\\.", "", census_tract_number))
+  mutate(census_tract_number = gsub("\\.", "", census_tract_number)) %>% filter(county_name %in% c("Bronx County", "Kings County", "Queens County", "New York County", "Richmond County"))
 
 #create a new column for approval/denial
 hmda_ny_3yrs <- hmda_ny_3yrs %>% 
@@ -367,6 +367,8 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
        subtitle = "The distribution of loan application amounts by county shows large spikes around $400,000", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
        fill = "County", x = "Loan amount (in $100s)", y = "Number of Loan Applications") + scale_fill_manual( values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45')) + theme(legend.position = c(.9, .7)) + theme(text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'))
+```
 
+```{r}
 
 ```

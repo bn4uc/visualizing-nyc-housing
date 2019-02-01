@@ -564,3 +564,31 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = applicant_sex_name)) +
 
 ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, y = win_income)) + 
   geom_jitter() + facet_wrap(hmda_ny_5yrs$outcome)
+
+#looking at differences in approval rates by male/female
+ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")), aes(y=win_income, x=applicant_sex_name, color=outcome)) +
+  geom_boxplot() + 
+  # facet_wrap(~applicant_sex_name) + 
+  scale_y_log10(expand=c(0,0))
+
+#looking at approval rates (should these ce rates or numbers?) for different income levels and races 
+#make quantiles 
+summary(hmda_ny_5yrs$applicant_income_000s)
+
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Q1", 
+                                             ifelse(applicant_income_000s %in% c(74:108), "Q2", 
+                                                    ifelse(applicant_income_000s %in% c(109:180), "Q3", 
+                                                           ifelse(applicant_income_000s %in% c(181:133549), "Q4", NA)))))
+
+#for people in first quartile of income, need rate 
+#count all black loan, income bin q1 
+hmda_ny_5yrs %>% 
+  group_by(income_bins, race_alternative, outcome, as_of_year) %>% 
+  summarise(n = n()) %>% View()
+
+
+hmda_ny_5yrs %>% 
+  filter(race_alternative== "Black or African American", income_bins == "Q1", county_name == "Kings County") %>% 
+  group_by(outcome, as_of_year) %>% summarise(n = n()) %>% ggplot() + geom_line(aes(x = as_of_year, y = n, color = outcome))
+
+
