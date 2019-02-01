@@ -34,7 +34,8 @@ hmda_ny_3yrs <- rbind(hmda15_ny, hmda16_ny, hmda17_ny) %>%
   mutate(census_tract_number = gsub("\\.", "", census_tract_number))
 
 hmda_ny_5yrs <- rbind(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny) %>%
-  mutate(census_tract_number = gsub("\\.", "", census_tract_number))
+  mutate(census_tract_number = gsub("\\.", "", census_tract_number)) %>% 
+  filter(county_name %in% c("Bronx County", "Kings County", "Queens County", "New York County", "Richmond County"))
 
 #create a new column for approval/denial
 hmda_ny_3yrs <- hmda_ny_3yrs %>% 
@@ -96,7 +97,7 @@ loan_purpose_per_yr %>% left_join(loan_orig_per_year, by = "as_of_year") %>% mut
 
 #percent of loans approved by race ####
 
-counts_race <- hmda_ny_3yrs %>% 
+counts_race <- hmda_ny_5yrs %>% 
   group_by(applicant_race_name_1) %>% 
   summarise(tot_apps_race = n())
 
@@ -402,6 +403,8 @@ outcome_race_rate <- hmda_ny_5yrs %>%
   left_join(counts_race, by = "applicant_race_name_1") %>% 
   mutate(rate= n/tot_apps_race)
 
+#these are rates that do not add up to 1, 
+#because they are the number of approved apps/number of total apps per race
 approved_race_rate <- hmda_ny_5yrs %>% 
   group_by(outcome, applicant_race_name_1) %>%
   summarise(n = n()) %>%
@@ -412,40 +415,147 @@ approved_race_rate <- as.data.frame(approved_race_rate)
 packing <- circleProgressiveLayout(approved_race_rate$rate, sizetype = 'area')
 approved_race_rate <- cbind(approved_race_rate, packing)
 dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
 
 ggplot() + 
   geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
   geom_text_repel(data = approved_race_rate, aes(x,y,label = applicant_race_name_1)) + 
-  scale_size_continuous(range = c(1,4)) + labs(title= "Approved")
+  scale_size_continuous(range = c(1,4)) + labs(title = "Denied") + 
+  labs(title = "White and Asian applicants receive higher rates of loan approval",
+       subtitle = "Areas represent the percent of loan application approved within racial groups", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank())
 
 denied_race_rate <- hmda_ny_5yrs %>% 
-  group_by(outcome, race_alternative) %>%
+  group_by(outcome, applicant_race_name_1) %>%
   summarise(n = n()) %>%
-  left_join(counts_race_alt, by = "race_alternative") %>% 
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
   mutate(rate= n/tot_apps_race) %>% filter(outcome == "Denied")
 
 denied_race_rate <- as.data.frame(denied_race_rate)
 packing <- circleProgressiveLayout(denied_race_rate$rate, sizetype = 'area')
 denied_race_rate <- cbind(denied_race_rate, packing)
 dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
 
 ggplot() + 
   geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
-  geom_text_repel(data = denied_race_rate, aes(x,y,label = race_alternative)) + 
-  scale_size_continuous(range = c(1,4)) + labs(title = "Denied")
+  geom_text_repel(data = denied_race_rate, aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) +
+  labs(title = "Historically Disadvantaged Racial Groups Have Higher Rates of Denial",
+       subtitle = "Areas represent the percent of loan application denied within racial groups", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank())
 
-other_race_rate <- hmda_ny_5yrs %>% 
-  group_by(outcome, applicant_race_name_1) %>%
-  summarise(n = n()) %>%
-  left_join(counts_race, by = "applicant_race_name_1") %>% 
-  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Other")
+#[doesnt say anything interesting, just shows us populations]
+#approved, what percent of approvals are black, white, etc, BUT this will just reflect who applies?
+hmda_ny_5yrs %>% filter(outcome == "Approved") %>% nrow()
 
-other_race_rate <- as.data.frame(other_race_rate)
-packing <- circleProgressiveLayout(other_race_rate$rate, sizetype = 'area')
-other_race_rate <- cbind(other_race_rate, packing)
+percent_of_approvals_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Approved") %>% 
+  group_by(applicant_race_name_1) %>% 
+  summarise(n = n()) %>% mutate(rate = n/513733)
+
+percent_of_approvals_by_race <- as.data.frame(percent_of_approvals_by_race)
+packing <- circleProgressiveLayout(percent_of_approvals_by_race$rate, sizetype = 'area')
+percent_of_approvals_by_race <- cbind(percent_of_approvals_by_race, packing)
 dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
 
 ggplot() + 
   geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
-  geom_text(data = other_race_rate, aes(x,y, label = applicant_race_name_1)) + 
-  scale_size_continuous(range = c(1,4)) + labs(title = "Other Outcome")
+  geom_text_repel(data = percent_of_approvals_by_race, 
+                  aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + 
+  labs(title= "Who gets approved for a loan?", 
+          subtitle= "Of all applicants who apply, Whites, Asians, \nand people whose race is not known receive more approvals",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank())
+
+#denied [doesnt tell us anything interesting, looks the same as approved]
+hmda_ny_5yrs %>% filter(outcome == "Denied") %>% nrow()
+
+percent_of_denials_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Denied") %>% 
+  group_by(applicant_race_name_1) %>% 
+  summarise(n = n()) %>% mutate(rate = n/148349)
+
+percent_of_denials_by_race <- as.data.frame(percent_of_denials_by_race)
+packing <- circleProgressiveLayout(percent_of_denials_by_race$rate, sizetype = 'area')
+percent_of_denials_by_race <- cbind(percent_of_denials_by_race, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = percent_of_denials_by_race, 
+                  aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + 
+  labs(title= "Who gets denied for a loan?", 
+       subtitle= "Of all applicants who apply, Whites, Asians, \nand people whose race is not known receive more approvals",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank())
+
+#circle packing with 2 levels 
+install.packages("treemap")
+library(treemap)
+
+group = c(rep("group-1", 4),rep("group-2", 2), rep("group-3",3))
+subgroup = paste("subgroup", c(1,2,3,4,1,2,1,2,3), spe = "-")
+value = c(13,5,22,12,11,7,3,1,23)
+data_test = data.frame(group, subgroup, value)
+treemap(data_test, index = c("group", "subgroup"),
+        vSize = "value", type = "index") + labs(title = "fsdhfjdsh")
+
+
+#overlapping histogram of loan amounts (need to winsorize or something) ####
+library(statar)
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
+
+ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
+  geom_histogram(alpha = .5, bins = 100) + 
+  scale_x_continuous(breaks= c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500)) +
+  labs(title = "Most loans applications are made for under $1 million, \n and most of those made over $1 million are in New York County or Kings County", 
+       subtitle = "The distribution of loan application amounts by county \nshows large spikes around $400,000", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
+       fill = "County", x = "Loan amount (in $100s)", y = "Number of Loan Applications")
+
+ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = as.factor(as_of_year))) +
+  geom_histogram(alpha = .5, bins = 100)
+
+ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = applicant_sex_name)) + 
+    geom_histogram(alpha = .5, bins = 100)
+
