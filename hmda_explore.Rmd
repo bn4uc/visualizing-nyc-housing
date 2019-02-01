@@ -280,5 +280,73 @@ denial_reasons_race %>%
 Having seen the overall denial rates, the following graph attempts to visualize how the racial breakdown of denial reasons differs from the averages. Asians and Whites are very rarely denied because of their credit histories while Blacks, Native Americans, and Pacific Islanders are most frequently denied because of their credit histories. This begs a better understanding of why certain racial groups would have worse credit histories, whether this measure if being used to deny people because it is more subjective than other measures, or what can be done to improve the credit histories of historically disadvantaged groups.
 
 ```{r}
+library(packcircles)
+
+counts_race <- hmda_ny_5yrs %>% 
+  group_by(applicant_race_name_1) %>% 
+  summarise(tot_apps_race = n())
+
+#approved
+approved_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Approved")
+
+approved_race_rate <- as.data.frame(approved_race_rate)
+packing <- circleProgressiveLayout(approved_race_rate$rate, sizetype = 'area')
+approved_race_rate <- cbind(approved_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = approved_race_rate, aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + labs(title = "Denied") + 
+  labs(title = "White and Asian applicants receive higher rates of loan approval than other races",
+       subtitle = "Areas represent the percent of loan application approved within racial groups", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank()) + 
+  scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39', '#FD7400'))
+
+
+#denied
+denied_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race) %>% filter(outcome == "Denied")
+
+denied_race_rate <- as.data.frame(denied_race_rate)
+packing <- circleProgressiveLayout(denied_race_rate$rate, sizetype = 'area')
+denied_race_rate <- cbind(denied_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = denied_race_rate, aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) +
+  labs(title = "Historically Disadvantaged Racial Groups Have Higher Rates of Denial",
+       subtitle = "Areas represent the percent of loan application denied within racial groups", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Race") + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank()) + 
+  scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39', '#FD7400'))
 
 ```
