@@ -581,14 +581,30 @@ hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_0
                                                            ifelse(applicant_income_000s %in% c(181:133549), "Q4", NA)))))
 
 #for people in first quartile of income, need rate 
-#count all black loan, income bin q1 
-hmda_ny_5yrs %>% 
-  group_by(income_bins, race_alternative, outcome, as_of_year) %>% 
-  summarise(n = n()) %>% View()
+
+#total loans per quartile, year, race
+quartile_race_year <- hmda_ny_5yrs %>% 
+  group_by(income_bins, race_alternative, as_of_year, county_name) %>% 
+  summarise(total = n())
+
+quartile_race_year_outcome <- hmda_ny_5yrs %>% 
+  group_by(income_bins, race_alternative, outcome, as_of_year, county_name) %>% 
+  summarise(per_outcome = n())
 
 
-hmda_ny_5yrs %>% 
-  filter(race_alternative== "Black or African American", income_bins == "Q1", county_name == "Kings County") %>% 
-  group_by(outcome, as_of_year) %>% summarise(n = n()) %>% ggplot() + geom_line(aes(x = as_of_year, y = n, color = outcome))
+#outcome rates for blacks in the first earnings quartile in brooklyn
+quartile_race_year_outcome %>% 
+  left_join(quartile_race_year, 
+            by = c("income_bins", "race_alternative", "as_of_year", "county_name")) %>% 
+  mutate(outcome_rate = per_outcome/total) %>%
+  filter(income_bins == "Q1", race_alternative == "Black or African American", county_name == "Kings County") %>% 
+  ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome))
 
+#outcome rates for blacks in the first earnings quartile in brooklyn####
+quartile_race_year_outcome %>% 
+  left_join(quartile_race_year, 
+            by = c("income_bins", "race_alternative", "as_of_year", "county_name")) %>% 
+  mutate(outcome_rate = per_outcome/total) %>% filter(race_alternative %in% c("Asian", "White", "Black or African American", "Other"), county_name == "Kings County") %>% 
+  ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
+  facet_wrap(race_alternative~income_bins) + scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A'))
 
