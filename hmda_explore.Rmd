@@ -220,7 +220,7 @@ ggplot(approval_rate_year_race,
        x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   geom_text_repel(data = filter(approval_rate_year_race, as_of_year == 2017),
                   aes(x = 2017, label=race_alternative)) + 
-  theme(legend.position = "none") + scale_color_manual(values = c("#004358", "#FD7400", "#1F8A70", "#FFE11A", "#BEDB39"))
+  theme(legend.position = "none") + scale_color_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39', '#BF4182'))
 ```
 
 
@@ -242,7 +242,7 @@ denial_reasons_year %>%
   geom_point() + geom_line() + labs(title = "Debt-to-Income Ratio is consistently the most frequent reason for denial", 
                                     subtitle = "Insufficient Collateral and Incomplete Applications have been decreasing as denial reasons \n while Credit History-related denials have been increasing", 
                                     caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_color_manual(values = c('#E8291A', '#004358', '#1f8a70', '#BEDB39', '#FFE11A', '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
+                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_color_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45', '#4966BF'))
 ```
 
 
@@ -273,7 +273,7 @@ denial_reasons_race %>%
   labs(title = "Credit History and Debt-to-Income Ratio are the two most frequent loan denial reasons", 
        subtitle = "However, the distribution of reasons differ significantly by race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
+       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45', '#4966BF'))
 ```
 
 
@@ -314,7 +314,7 @@ ggplot() +
   theme(panel.border = element_blank(), 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
         axis.title.x = element_blank(), axis.title.y = element_blank(), 
-        axis.ticks = element_blank(), axis.text = element_blank()) + 
+        axis.ticks = element_blank(), axis.text = element_blank(), text = element_text(family = "Meiryo")) + 
   scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39', '#FD7400'))
 
 
@@ -346,7 +346,7 @@ ggplot() +
   theme(panel.border = element_blank(), 
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
         axis.title.x = element_blank(), axis.title.y = element_blank(), 
-        axis.ticks = element_blank(), axis.text = element_blank()) + 
+        axis.ticks = element_blank(), axis.text = element_blank(), text = element_text(family = "Meiryo")) + 
   scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39', '#FD7400'))
 
 ```
@@ -362,9 +362,9 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
   geom_histogram(alpha = .5, bins = 100) + 
   scale_x_continuous(breaks= c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500)) +
   labs(title = "Most loans applications are made for under $1 million, \n and most of those made over $1 million are in New York County or Kings County", 
-       subtitle = "The distribution of loan application amounts by county \nshows large spikes around $400,000", 
+       subtitle = "The distribution of loan application amounts by county shows large spikes around $400,000", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-       fill = "County", x = "Loan amount (in $100s)", y = "Number of Loan Applications") + scale_fill_manual( values = c('#E8291A', '#004358', '#FFE11A','#1f8a70',  '#FD7400', '#E55EE8','#BEDB39', '#8c4de8')) + theme(legend.position = c(.9, .7))
+       fill = "County", x = "Loan amount (in $100s)", y = "Number of Loan Applications") + scale_fill_manual( values = c('#E8291A', '#004358', '#FFE11A','#1f8a70',  '#FD7400', '#E55EE8','#BEDB39', '#8c4de8')) + theme(legend.position = c(.9, .7)) + theme(text = element_text(family = "Meiryo"))
 
 
 ```
