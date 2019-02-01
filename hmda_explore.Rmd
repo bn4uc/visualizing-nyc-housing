@@ -220,7 +220,7 @@ ggplot(approval_rate_year_race,
        x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   geom_text_repel(data = filter(approval_rate_year_race, as_of_year == 2017),
                   aes(x = 2017, label=race_alternative)) + 
-  theme(legend.position = "none")
+  theme(legend.position = "none") + scale_color_manual(values = c("#004358", "#FD7400", "#1F8A70", "#FFE11A", "#BEDB39"))
 ```
 
 
@@ -273,8 +273,12 @@ denial_reasons_race %>%
   labs(title = "Credit History and Debt-to-Income Ratio are the two most frequent loan denial reasons", 
        subtitle = "However, the distribution of reasons differ significantly by race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A', '#004358', '#1f8a70', '#BEDB39', '#FFE11A', '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
+       x = "Applicant Race", y = "Denial Rate") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#E55EE8', '#8c4de8', '#6CC3F2'))
 ```
 
 
 Having seen the overall denial rates, the following graph attempts to visualize how the racial breakdown of denial reasons differs from the averages. Asians and Whites are very rarely denied because of their credit histories while Blacks, Native Americans, and Pacific Islanders are most frequently denied because of their credit histories. This begs a better understanding of why certain racial groups would have worse credit histories, whether this measure if being used to deny people because it is more subjective than other measures, or what can be done to improve the credit histories of historically disadvantaged groups.
+
+```{r}
+
+```
