@@ -545,6 +545,9 @@ library(statar)
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
 
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
+
 ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
   geom_histogram(alpha = .5, bins = 100) + 
   scale_x_continuous(breaks= c(0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500)) +
@@ -559,3 +562,5 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = as.factor(as_of_year))) +
 ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = applicant_sex_name)) + 
     geom_histogram(alpha = .5, bins = 100)
 
+ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, y = win_income)) + 
+  geom_jitter() + facet_wrap(hmda_ny_5yrs$outcome)
