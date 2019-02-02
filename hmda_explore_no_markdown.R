@@ -529,15 +529,18 @@ ggplot() +
         axis.ticks = element_blank(), axis.text = element_blank())
 
 #circle packing with 2 levels 
-install.packages("treemap")
-library(treemap)
+library(ggraph)
+library(igraph)
 
-group = c(rep("group-1", 4),rep("group-2", 2), rep("group-3",3))
-subgroup = paste("subgroup", c(1,2,3,4,1,2,1,2,3), spe = "-")
-value = c(13,5,22,12,11,7,3,1,23)
-data_test = data.frame(group, subgroup, value)
-treemap(data_test, index = c("group", "subgroup"),
-        vSize = "value", type = "index") + labs(title = "fsdhfjdsh")
+counts_race <- hmda_ny_5yrs %>% 
+  group_by(applicant_race_name_1) %>% 
+  summarise(tot_apps_race = n())
+
+outcome_race_rate <- hmda_ny_5yrs %>% 
+  group_by(outcome, applicant_race_name_1) %>%
+  summarise(n = n()) %>%
+  left_join(counts_race, by = "applicant_race_name_1") %>% 
+  mutate(rate= n/tot_apps_race)
 
 
 #overlapping histogram of loan amounts (need to winsorize or something) ####

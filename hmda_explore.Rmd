@@ -284,6 +284,7 @@ Having seen the overall denial rates, the following graph attempts to visualize 
 ```{r}
 library(packcircles)
 
+#MAKE THIS A 2 LEVEL CIRCLE !!!!!!! 
 counts_race <- hmda_ny_5yrs %>% 
   group_by(applicant_race_name_1) %>% 
   summarise(tot_apps_race = n())
@@ -397,5 +398,5 @@ quartile_race_year_outcome %>%
   scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
         panel.background = element_rect(fill = '#F2F5F2'), panel.spacing = unit(1.5, "lines")) + 
-  labs(subtitle = "Loan Application Outcome Rates by Race and Year in Brooklyn", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
+  labs(title = "Loan application approval rates for low-to-middle income Blacks in Brooklyn has been decreasing, \nwhile most other races and quartiles have steady approval rates", subtitle = "Rates over time broken down by income quartiles and by race, show that for Whites and Asians, \napprovals have been steadily increasing, while for Blacks and Others in the first quartile, rates are decreasing ", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
 ```
