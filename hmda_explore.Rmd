@@ -396,6 +396,6 @@ quartile_race_year_outcome %>%
   facet_wrap(race_alternative~income_bins) + 
   scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
-        panel.background = element_rect(fill = '#F2F5F2')) + 
+        panel.background = element_rect(fill = '#F2F5F2'), panel.spacing = unit(1.5, "lines")) + 
   labs(subtitle = "Loan Application Outcome Rates by Race and Year in Brooklyn", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
 ```
