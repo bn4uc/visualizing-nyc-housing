@@ -542,6 +542,41 @@ outcome_race_rate <- hmda_ny_5yrs %>%
   left_join(counts_race, by = "applicant_race_name_1") %>% 
   mutate(rate= n/tot_apps_race)
 
+outcome_race_rate <- as.data.frame(outcome_race_rate)
+test1 <- as.data.frame(outcome_race_rate %>% select(outcome, applicant_race_name_1))
+test2<- as.data.frame(outcome_race_rate %>% select(applicant_race_name_1, rate))
+
+mygraph <- graph_from_data_frame(test1, vertices = test2)
+
+
+#trying to facetwrap 
+outcome_race_rate <- as.data.frame(outcome_race_rate)
+packing <- circleProgressiveLayout(outcome_race_rate$rate, sizetype = 'area')
+outcome_race_rate <- cbind(outcome_race_rate, packing)
+dat.gg <- circleLayoutVertices(packing, npoints =50 )
+dat.gg$id[which(dat.gg$id == 1)] <- "American Indian or Alaska Native"
+dat.gg$id[which(dat.gg$id == 2)] <- "Asian"
+dat.gg$id[which(dat.gg$id == 3)] <- "Black or African American"
+dat.gg$id[which(dat.gg$id == 4)] <- "Native Hawaiian or Other Pacific Islander"
+dat.gg$id[which(dat.gg$id == 5)] <- "Unknown"
+dat.gg$id[which(dat.gg$id == 6)] <- "White"
+
+ggplot() + 
+  geom_polygon(data = dat.gg, aes(x,y, group = id, fill = as.factor(id)), color = "black") +
+  geom_text_repel(data = outcome_race_rate, 
+                  aes(x,y,label = applicant_race_name_1)) + 
+  scale_size_continuous(range = c(1,4)) + 
+  theme(panel.border = element_blank(), 
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.ticks = element_blank(), axis.text = element_blank())
+
+
+
+
+
+
+
 
 #overlapping histogram of loan amounts (need to winsorize or something) ####
 library(statar)
@@ -569,10 +604,15 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, y = win_income)) +
   geom_jitter() + facet_wrap(hmda_ny_5yrs$outcome)
 
 #looking at differences in approval rates by male/female
-ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")), aes(y=win_income, x=applicant_sex_name, color=outcome)) +
-  geom_boxplot() + 
-  # facet_wrap(~applicant_sex_name) + 
-  scale_y_log10(expand=c(0,0))
+ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
+       aes(y=win_income, x=applicant_sex_name, fill=outcome), alpha = .3) +
+  geom_boxplot() + scale_y_log10(expand=c(0,0)) + 
+  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+         panel.background = element_rect(fill = '#F2F5F2')) +
+  labs(fill = "Outcome", x = "Gender of Applicant", y = "Income", 
+       title = "There is a difference in the median income of men and women who are approved for loans", 
+       subtitle = "While approval relies on other factors, the fact that distribution \nof incomes within outcomes differs between genders reflects systemic inequality in approvals or loans, incomes, or both.")
 
 #looking at approval rates (should these ce rates or numbers?) for different income levels and races 
 #make quantiles 
@@ -611,3 +651,4 @@ quartile_race_year_outcome %>%
   ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
   facet_wrap(race_alternative~income_bins) + scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A'))
 
+#trying treemap again

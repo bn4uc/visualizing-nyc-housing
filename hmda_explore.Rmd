@@ -371,6 +371,20 @@ ggplot(hmda_ny_5yrs, aes(x = win_loan_amount, fill = county_name)) +
 ```
 
 ```{r}
+#looking at differences in approval rates by male/female
+ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
+       aes(y=win_income, x=applicant_sex_name, fill=outcome), alpha = .3) +
+  geom_boxplot() + scale_y_log10(expand=c(0,0)) + 
+  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+         panel.background = element_rect(fill = '#F2F5F2')) +
+  labs(fill = "Outcome", x = "Gender of Applicant", y = "Income", 
+       title = "There is a difference in the median income of men and women who are approved for loans", 
+       subtitle = "While approval relies on other factors, the fact that distribution \nof incomes within outcomes differs between genders reflects systemic inequality in approvals or loans, incomes, or both.", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+```
+
+
+```{r}
 #loan application outcome rates by race and year (facet_grid)
 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
