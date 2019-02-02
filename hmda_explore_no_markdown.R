@@ -612,7 +612,7 @@ ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
          panel.background = element_rect(fill = '#F2F5F2')) +
   labs(fill = "Outcome", x = "Gender of Applicant", y = "Income", 
        title = "There is a difference in the median income of men and women who are approved for loans", 
-       subtitle = "While approval relies on other factors, the fact that distribution \nof incomes within outcomes differs between genders reflects systemic inequality in approvals or loans, incomes, or both.")
+       subtitle = "While approval relies on other factors, the distribution \nof incomes within outcomes differs between genders reflects systemic inequality in approvals or loans, incomes, or both.")
 
 #looking at approval rates (should these ce rates or numbers?) for different income levels and races 
 #make quantiles 
