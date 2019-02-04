@@ -113,21 +113,20 @@ census_tracts_merged_df <- merge(census_tracts_merged_df,
                                        census_tract_merged, 
                                        by.x = "id", by.y="polyID")
 
-census_tracts_merged_df$breaks <- cut(census_tracts_merged_df$approval_rate, c(0, .25, .5, .75, 1)) 
+census_tracts_merged_df$breaks <- cut(census_tracts_merged_df$approval_rate, c(0, .2, .4, .6, .8, 1)) 
 
 #plot- approval rates by census block #### 
 ggplot() + 
   geom_polygon(data = census_tracts_merged_df,
-               aes(x = long, y = lat, group = group, fill = breaks)) + 
-  scale_fill_brewer("Approval Rate", palette = "OrRd") +
-  labs(title = "Very few census tracts in New York City have average loan approval rates \nabove 75%", 
-       subtitle = "Most census tracts have approval rates between 50% and 75%", 
+               aes(x = long, y = lat, group = group, fill = breaks)) +
+  labs(title = "Very few census tracts in New York City have average loan approval rates \nabove 80%", 
+       subtitle = "Most census tracts have approval rates between 60% and 80%", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(line = element_blank(),                          
         axis.text=element_blank(),                      
         axis.title=element_blank(),                      
         panel.background = element_blank(), 
-        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fed98e', '#fe9929', '#cc4c02'))
+        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
 
 ```
 
@@ -177,7 +176,7 @@ census_tracts_merged_black_df <- merge(census_tracts_merged_black_df,
                           census_tract_merged_black, 
                           by.x = "id", by.y="polyID")
 
-census_tracts_merged_black_df$breaks <- cut(census_tracts_merged_black_df$approval_rate, c(0,.25,.5,.75,1)) 
+census_tracts_merged_black_df$breaks <- cut(census_tracts_merged_black_df$approval_rate, c(0, .2, .4, .6, .8, 1))
 
 #plot- black loan approval rates map ####
 ggplot() + 
@@ -191,7 +190,7 @@ ggplot() +
         axis.text=element_blank(),                      
         axis.title=element_blank(),                      
         panel.background = element_blank(), 
-        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fed98e', '#fe9929', '#cc4c02'))
+        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
 
 ```
 
@@ -218,12 +217,10 @@ ggplot(approval_rate_year_race,
        aes(x = as_of_year, y = outcome_rate, color = race_alternative)) +
   geom_point() + geom_line() + 
   scale_x_continuous(breaks = c(2013, 2014, 2015, 2016, 2017)) + 
-  labs(title = "Loan approval rates for Blacks are consistently below Whites and Asians", 
-       subtitle = "Despite a sharp decrease for American Indians in 2016, \nloan approval rates have remained relatively consistent over the last 5 years", 
-       x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  labs(title = "Loan approval rates for Blacks are consistently below Whites and Asians", x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   geom_text_repel(data = filter(approval_rate_year_race, as_of_year == 2017),
                   aes(x = 2017, label=race_alternative)) + 
-  theme(legend.position = "none", text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2')) + scale_color_manual(values = c('#E8291A','#FD7400', '#004358', '#1f8a70', '#BEDB39'))
+  theme(legend.position = "none", text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'), panel.grid.minor = element_line(linetype = "dashed"), axis.ticks = element_blank()) + scale_color_manual(values = c('#E8291A','#FD7400', '#004358', '#1f8a70', '#BEDB39'))
 ```
 
 
@@ -245,7 +242,7 @@ denial_reasons_year %>%
   geom_point() + geom_line() + labs(title = "Debt-to-Income Ratio is consistently the most \nfrequent reason for denial", 
                                     subtitle = "Insufficient Collateral and Incomplete Applications have been decreasing as \ndenial reasons while Credit History-related denials have been increasing", 
                                     caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
-                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_color_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45', '#0D177F')) + theme(text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'))
+                                    x = "Year", y = "Denial Rate", color = "Denial Reason") + scale_color_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45', '#0D177F')) + theme(text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'), axis.ticks = element_blank())
 ```
 
 
@@ -272,7 +269,7 @@ denial_reasons_race %>%
                y = denial_rate, 
                fill = denial_reason_name_1),
            stat = "identity") + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2')) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'), axis.ticks = element_blank()) + 
   labs(title = "Credit History and Debt-to-Income Ratio are the two \nmost frequent loan denial reasons", 
        subtitle = "However, the distribution of reasons differ significantly by race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
@@ -285,7 +282,6 @@ Having seen the overall denial rates, the following graph attempts to visualize 
 ```{r, eval = FALSE, include = FALSE}
 library(packcircles)
 
-#MAKE THIS A 2 LEVEL CIRCLE !!!!!!! 
 counts_race <- hmda_ny_5yrs %>% 
   group_by(applicant_race_name_1) %>% 
   summarise(tot_apps_race = n())
@@ -380,14 +376,15 @@ ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
   geom_boxplot() + scale_y_log10(expand=c(0,0)) + 
   scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
-         panel.background = element_rect(fill = '#F2F5F2')) +
+         panel.background = element_rect(fill = '#F2F5F2'), panel.grid.major = element_line(color = "#404040"), panel.grid.minor = element_blank()) +
   labs(fill = "Outcome", x = "Gender of Applicant", y = "Income (in $1,000s)", 
        title = "There is a difference in the median income of \nmen and women who are approved for loans", 
        subtitle = "While approval relies on other factors, the distribution \nof incomes within loan application outcomes differs between genders \nand reflects systemic inequality in approvals or loans, incomes, or both.", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
 
-```{r, fig.align = "center", fig.height=10}
+In exploring whether loan approvals processes systemically disadvantage any groups, I have chosen to explore gender as well as race. This graph shows the differences in average income for males and females within each outcome group (approved, denied, or other). Men who are approved for loans typically have higher incomes than women who are approved for loans. Men who are denied also have higher incomes, on average than women who are denied a loan. The other category contains people who did not provide information needed to complete their loan applications, and also reflects the societal differences in incomes by gender. 
+```{r, fig.align = "center", fig.height=10, fig.width=11}
 #loan application outcome rates by race and year (facet_grid)
 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
@@ -401,23 +398,29 @@ quartile_race_year <- hmda_ny_5yrs %>%
   group_by(income_bins, race_alternative, as_of_year, county_name) %>% 
   summarise(total = n())
 
+quartile_race_year$race_alternative[which(quartile_race_year$race_alternative == "Black or African American")] <- "Black"
+
 quartile_race_year_outcome <- hmda_ny_5yrs %>% 
   group_by(income_bins, race_alternative, outcome, as_of_year, county_name) %>% 
   summarise(per_outcome = n())
+
+quartile_race_year_outcome$race_alternative[which(quartile_race_year_outcome$race_alternative == "Black or African American")] <- "Black"
 
 quartile_race_year_outcome %>% 
   left_join(quartile_race_year, 
             by = c("income_bins", "race_alternative", "as_of_year", "county_name")) %>% 
   mutate(outcome_rate = per_outcome/total) %>% 
-  filter(race_alternative %in% c("Asian", "White", "Black or African American", "Other"), county_name == "Kings County", !is.na(income_bins)) %>% 
+  filter(race_alternative %in% c("Asian", "White", "Black", "Other"), county_name == "Kings County", !is.na(income_bins)) %>% 
   ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
   facet_wrap(race_alternative~income_bins) + 
   scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
-        panel.background = element_rect(fill = '#F2F5F2'), panel.spacing = unit(1.5, "lines"), legend.position = "bottom") + 
-  labs(title = "Loan application approval rates for low-to-middle income \nBlacks in Brooklyn has been decreasing, \nwhile most other races and quartiles have steady approval rates", subtitle = "Rates over time broken down by income quartiles and by race, show that for \nWhites and Asians, approvals have been steadily increasing, \nwhile for Blacks and Others in the first quartile, rates are decreasing ", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
+        panel.background = element_rect(fill = '#F2F5F2'), panel.spacing = unit(1.5, "lines"), legend.position = "bottom", axis.ticks = element_blank()) + 
+  labs(title = "Loan application approval rates for low-to-middle income Blacks in Brooklyn has been decreasing, \nwhile most other races and quartiles have steady approval rates", subtitle = "Rates over time broken down by income quartiles and by race, show that for \nWhites and Asians, approvals have been steadily increasing, \nwhile for Blacks and Others in the first quartile, rates are decreasing ", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", color = "Outcome", x = "Year", y = "Rate")
 ```
 
+
+By breaking down applicants into income quartiles, and by race, we can look at differences in approvial rates overtime, and identify the groups that are struggling with the changing NYC housing landscape. Approval rates for Black applicants in the first income quartile have been steadily decreasing over the last five years. Many other income groups and racial groups have not seen any decreases in their approval rates over time. This graph also allows one to contrast how high White approval rates are compared to Black approval rates in the first income quartile. The Other category is a combination of American Indians, Native Alaskans, Native Hawaiians, and Pacific Islanders. The Other category has very different approval rates over time for each income quartile, and for the first income quartile, approval rates were below denial rates for most years. 
 
 
 
