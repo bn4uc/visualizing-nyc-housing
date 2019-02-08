@@ -124,7 +124,7 @@ ggplot() +
 
 The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in loan approval rates across the city, there is not a clear distinction between certain areas with higher approval rates, for example, there are high approval tracts in Brooklyn and the Bronx that are not know for being high income (as one might expect). In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
 
-```{r, error = FALSE, message = FALSE, warning = FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE, eval = FALSE}
 #approval rates by race by census tract
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
@@ -186,23 +186,52 @@ ggplot() +
 ```
 
 ```{r}
-#MAP OF JUST ONE COUNTY, just filter by borough name
-#look at brooklyn and show rates of change in approval rates or number of apps over the last five years
+#map of loan approval rates for low income applicants
+
+census_tracts_bk <- census_tracts %>% filter(boro_name == "Brooklyn")
+
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
                                              ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
                                                     ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
                                                            ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", NA)))))
 
-apps_outcome_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1", county_name == "Kings County") %>% group_by(census_tract_number, as_of_year, outcome) %>% summarise(outcome_tot = n())
+apps_outcome_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year, outcome) %>% summarise(outcome_tot = n())
 
-apps_total_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1", county_name == "Kings County") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n())
+apps_total_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n())
 
 approval_rate_5yr_changes <- apps_outcome_Q1_bk %>% left_join(apps_total_Q1_bk, by = c("census_tract_number", "as_of_year")) %>% filter(outcome == "Approved", as_of_year %in% c(2013, 2017)) %>% mutate(approval_rate = outcome_tot/tot_apps)
 
 approval_rate_5yr_changes$prior <- lag(approval_rate_5yr_changes$approval_rate)
 
-approval_rate_5yr_changes %>% filter(as_of_year == 2017) %>% mutate(approval_rate_change = prior-approval_rate)
+census_tract_merged <- approval_rate_5yr_changes %>% filter(as_of_year == 2017) %>% mutate(approval_rate_change = approval_rate- prior) %>% right_join(census_tracts_bk,  by = c("census_tract_number" = "ct2010"))
+
+census_tract_merged$breaks <- cut(census_tract_merged$approval_rate_change, c(-0.8, -0.3, 0, 0.3, 0.8))
+
+
+ggplot() + geom_sf(data = census_tract_merged, 
+                   aes(fill = breaks), color = "white", lwd = 0) + guides(fill=guide_legend(title="Change in Approval Rate \nbetween 2013-2017")) +  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641")) + theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + labs(title = "Loan Approval rates for low-income applicants in Brooklyn \nincreased most significantly in tracts that are further from Manhattan, while they decreased \nin about half of the census tracts", subtitle = "Change in loan application approval rates for low-income applicants between 2013 and 2017 in Brooklyn")
+
 ```
+
+```{r}
+#map that looks at change in number of loan applications
+#map that groups by NTA rather than census tract - merge early 
+census_tracts_bk <- census_tracts %>% filter(boro_name == "Brooklyn")
+
+
+apps_total_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n())
+
+#merge then group by NTA 
+
+hmda_ny_5yrs %>% left_join(census_tracts_bk, by = c("census_tract_number" = "ct2010")) %>% group_by(nta_name)
+
+```
+
 This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
