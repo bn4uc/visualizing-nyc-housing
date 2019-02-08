@@ -18,7 +18,6 @@ library(broom)
 library(ggrepel)
 library(statar)
 library(sf)
-
 ```
 
 
@@ -103,7 +102,7 @@ census_tract_merged <- left_join(census_tracts, approval_rates_by_tract,
       st_as_sf()
 
 #dealing with ggplot
-census_tracts_merged_df$breaks <- cut(census_tracts_merged_df$approval_rate, c(0, .2, .4, .6, .8, 1)) 
+census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4, .6, .8, 1)) 
 
 #plot- approval rates by census block #### 
 #need to make lines in between smaller or different color 
@@ -113,11 +112,13 @@ ggplot() +
   labs(title = "Very few census tracts in New York City have average loan approval rates \nabove 80%", 
        subtitle = "Most census tracts have approval rates between 60% and 80%", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
-  theme(line = element_blank(),                          
-        axis.text=element_blank(),                      
+  theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
-        panel.background = element_blank(), 
-        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        legend.position = c(0.25,.75),
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
 
 ```
 
