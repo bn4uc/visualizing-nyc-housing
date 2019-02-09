@@ -651,4 +651,26 @@ quartile_race_year_outcome %>%
   ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
   facet_wrap(race_alternative~income_bins) + scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A'))
 
-#trying treemap again
+#line plot of total apps by year for each census tract
+hmda_ny_5yrs %>% 
+  filter(income_bins == "Income Quartile 1") %>% 
+  group_by(census_tract_number, as_of_year) %>% 
+  summarise(tot_apps = n()) %>% ggplot() + 
+  geom_line(aes(x = as_of_year, y = tot_apps, color = census_tract_number)) + 
+  guides(color = FALSE)
+
+#number of apps per year faceted by income quartiles
+hmda_ny_5yrs %>% 
+  group_by(census_tract_number, as_of_year, income_bins) %>% 
+  summarise(tot_apps = n()) %>% 
+  ggplot() + geom_line(aes(x = as_of_year, y = tot_apps, color = census_tract_number)) + facet_grid(~income_bins) + guides(color = FALSE)
+
+#random line plot that looks at changes in total number of apps per nta (need to add labels to top ones)
+hmda_ny_5yrs %>% 
+  left_join(census_tracts_bk, by = c("census_tract_number" = "ct2010")) %>% 
+  group_by(ntaname, as_of_year) %>% 
+  summarise(n = n()) %>% 
+  filter(!is.na(ntaname)) %>% 
+  ggplot() + geom_line(aes(x = as_of_year, y = n, color = ntaname)) + 
+  guides(color = FALSE) + geom_text(aes(label = ntaname))
+

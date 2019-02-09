@@ -31,21 +31,8 @@ hmda15_ny <- read_csv("hmda15_ny.csv")
 hmda16_ny <- read_csv("hmda16_ny.csv")
 hmda17_ny <- read_csv("hmda17_ny.csv")
 
-hmda_ny_3yrs <- rbind(hmda15_ny, hmda16_ny, hmda17_ny) %>%
-  mutate(census_tract_number = gsub("\\.", "", census_tract_number))
-
 hmda_ny_5yrs <- rbind(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny) %>%
   mutate(census_tract_number = gsub("\\.", "", census_tract_number)) %>% filter(county_name %in% c("Bronx County", "Kings County", "Queens County", "New York County", "Richmond County"))
-
-#create a new column for approval/denial
-hmda_ny_3yrs <- hmda_ny_3yrs %>% 
-  mutate(outcome = ifelse(action_taken_name %in% 
-                            c("Application approved but not accepted",
-                              "Loan originated", "Loan purchased by the institution"),"Approved", 
-                          ifelse(action_taken_name %in%
-                                   c("Application denied by financial institution",
-                                     "Preapproval request denied by financial institution"),
-                                 "Denied", "Other")))
 
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(outcome = ifelse(action_taken_name %in% 
@@ -56,18 +43,11 @@ hmda_ny_5yrs <- hmda_ny_5yrs %>%
                                      "Preapproval request denied by financial institution"),
                                  "Denied", "Other")))
 
-#rename the values for applicant race
-hmda_ny_3yrs$applicant_race_name_1[which(hmda_ny_3yrs$applicant_race_name_1 %in%
-                                           c("Information not provided by applicant in mail, Internet, or telephone application",
-                                             "Not applicable"))] <- "Unknown"
 hmda_ny_5yrs$applicant_race_name_1[which(hmda_ny_5yrs$applicant_race_name_1 %in%
                                            c("Information not provided by applicant in mail, Internet, or telephone application",
                                              "Not applicable"))] <- "Unknown"
 
-#regroup races
-hmda_ny_3yrs <- hmda_ny_3yrs %>% mutate(race_alternative = applicant_race_name_1)
-hmda_ny_3yrs$race_alternative[which(hmda_ny_3yrs$race_alternative %in% 
-                                      c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
+
 hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(race_alternative = applicant_race_name_1)
 hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in% 
                                       c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
@@ -214,21 +194,21 @@ ggplot() + geom_sf(data = census_tract_merged,
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title = "Loan Approval rates for low-income applicants in Brooklyn \nincreased most significantly in tracts that are further from Manhattan, while they decreased \nin about half of the census tracts", subtitle = "Change in loan application approval rates for low-income applicants between 2013 and 2017 in Brooklyn")
+        axis.ticks = element_blank()) + labs(title = "Gentrifying neighborhoods such as Bed-Stuy, Greenpoint, and Crown Heights show \nsignificant decreases in loan approval rates for low-income applicants over the last five years", subtitle = "However, many areas further from Manhattan show increased approval rates")
 
 ```
 
 ```{r}
 #map that looks at change in number of loan applications
 #map that groups by NTA rather than census tract - merge early 
-census_tracts_bk <- census_tracts %>% filter(boro_name == "Brooklyn")
 
+hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n()) %>% filter(as_of_year %in% c(2013, 2017)) 
 
-apps_total_Q1_bk <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n())
+hmda_ny_5yrs %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n()) %>% filter(as_of_year %in% c(2013, 2017))
 
 #merge then group by NTA 
 
-hmda_ny_5yrs %>% left_join(census_tracts_bk, by = c("census_tract_number" = "ct2010")) %>% group_by(nta_name)
+
 
 ```
 
