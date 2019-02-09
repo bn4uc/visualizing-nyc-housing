@@ -183,7 +183,7 @@ approval_rate_5yr_changes <- apps_outcome_Q1_bk %>% left_join(apps_total_Q1_bk, 
 
 approval_rate_5yr_changes$prior <- lag(approval_rate_5yr_changes$approval_rate)
 
-census_tract_merged <- approval_rate_5yr_changes %>% filter(as_of_year == 2017) %>% mutate(approval_rate_change = approval_rate- prior) %>% right_join(census_tracts_bk,  by = c("census_tract_number" = "ct2010"))
+census_tract_merged <- approval_rate_5yr_changes %>% filter(as_of_year == 2017) %>% mutate(approval_rate_change = prior - approval_rate) %>% right_join(census_tracts_bk,  by = c("census_tract_number" = "ct2010"))
 
 census_tract_merged$breaks <- cut(census_tract_merged$approval_rate_change, c(-0.8, -0.3, 0, 0.3, 0.8))
 
@@ -194,7 +194,7 @@ ggplot() + geom_sf(data = census_tract_merged,
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title = "Gentrifying neighborhoods such as Bed-Stuy, Greenpoint, and Crown Heights show \nsignificant decreases in loan approval rates for low-income applicants over the last five years", subtitle = "However, many areas further from Manhattan show increased approval rates")
+        axis.ticks = element_blank()) + labs(title = "Gentrifying neighborhoods such as Brooklyn Heights, Williamsburg, and Astoria show \nsignificant decreases in loan approval rates for low-income applicants over the last five years", subtitle = "However, many areas further from Manhattan show increased approval rates")
 
 ```
 
@@ -207,11 +207,42 @@ hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_
 hmda_ny_5yrs %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n()) %>% filter(as_of_year %in% c(2013, 2017))
 
 #merge then group by NTA 
+num_apps_change_bk <- hmda_ny_5yrs %>% 
+  left_join(census_tracts_bk, by = c("census_tract_number" = "ct2010")) %>% 
+  group_by(ntaname, as_of_year) %>% 
+  summarise(n = n()) %>% filter(as_of_year %in% c(2013, 2017), !is.na(ntaname))
 
+num_apps_change_bk$prior <- lag(num_apps_change_bk$n)
+num_apps_change_bk$change <-as.numeric(num_apps_change_bk$prior -num_apps_change_bk$n)
+num_apps_change_bk$breaks <- cut(num_apps_change_bk$change, c(-7500, -500, 0, 500, 7500))
 
+num_apps_change_bk <- num_apps_change_bk %>% left_join(census_tracts_bk, by = "ntaname")
+
+ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641"))
+
+#make this a symbol map ^^^^
 
 ```
 
+
+```{r}
+#map with income to loan amount ratios by census tract
+#create income to loan amount
+
+#general rule - can afford to finance a mortgage between 2-2.5x gross yearly income
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(income_as_part_of_loan = applicant_income_000s/loan_amount_000s) 
+
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(win_income_as_part_of_loan = win_income/win_loan_amount) 
+
+hmda_ny_5yrs %>% filter(as_of_year == 2017) %>% select(win_income_as_part_of_loan, census_tract_number) %>% left_join(census_tracts, by = c("census_tract_number" = "ct2010")) %>% ggplot() + geom_sf(aes(fill = win_income_as_part_of_loan))
+```
 This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
