@@ -239,9 +239,22 @@ hmda_ny_5yrs <- hmda_ny_5yrs %>%
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
 
-hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(win_income_as_part_of_loan = win_income/win_loan_amount) 
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(win_loan_income_ratio = win_loan_amount/win_income)
 
-hmda_ny_5yrs %>% filter(as_of_year == 2017) %>% select(win_income_as_part_of_loan, census_tract_number) %>% left_join(census_tracts, by = c("census_tract_number" = "ct2010")) %>% ggplot() + geom_sf(aes(fill = win_income_as_part_of_loan))
+#need only people who applied without a co-applicant/ look at data dictionary
+test <- hmda_ny_5yrs %>% filter(as_of_year == 2017, co_applicant_ethnicity_name == "No co-applicant") %>% 
+  group_by(census_tract_number) %>% 
+  summarise(mean_loan_income_ratio = 
+              mean(win_loan_income_ratio, na.rm = TRUE)) %>%
+  left_join(census_tracts, by = c("census_tract_number" = "ct2010"))
+
+test$breaks <- cut(test$mean_loan_income_ratio, c(0, 2, 3, 4, 240))
+  
+ggplot(test) + 
+  geom_sf(aes(fill = breaks), color = "white", lwd = 0) +  scale_fill_manual(values = c("#1a9641", "#a6d96a", '#e27a48', '#cc4c02'))
+
+
+#^ MAKE THIS IS A SYMBOL MAP or the other one
 ```
 This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 
