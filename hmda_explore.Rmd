@@ -21,7 +21,7 @@ library(sf)
 ```
 
 
-```{r, error = FALSE, message = FALSE, warning = FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE}
 #loading data and making preliminary changes 
 options("scipen"=100, "digits"=4)
 
@@ -68,7 +68,7 @@ rm(crosswalk)
 
 ##Home Mortgage Disclosure Act Data - Exploration in New York City 
 
-Home Mortgage Disclosure Act data provides insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and where most are denied, and more. 
+Home Mortgage Disclosure Act data provides insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and denied, and more. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #approval rates by census tract 
@@ -99,8 +99,8 @@ census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4
 ggplot() + 
   geom_sf(data = census_tract_merged,
                aes(fill = breaks), color = "white", lwd = 0) +
-  labs(title = "Most census tracts have approval rates between 60% and 80%", 
-       subtitle = "The highest approval rates are mostly found in Queens, while rates dip below 40% in historically lower-income areas such as East Brooklyn", 
+  labs(title = "Most census tracts have approval rates between \n60% and 80%", 
+       subtitle = "The highest approval rates are mostly found \nin Queens, while rates dip below 40% in historically \nlower-income areas, such as East Brooklyn",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
@@ -176,7 +176,7 @@ ggplot() +
 
 ```
 
-```{r}
+```{r, error = FALSE, message = FALSE, warning = FALSE}
 #map of loan approval rates for low income applicants
 
 census_tracts_bk <- census_tracts %>% filter(boro_name == "Brooklyn")
@@ -204,13 +204,17 @@ ggplot() + geom_sf(data = census_tract_merged,
         axis.title=element_blank(),                      
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
-        legend.position = c(.1, .8), legend.background = element_blank(),
+        legend.position = c(.2, .8), legend.background = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn have decreased significantly \nin gentrifying areas such as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan show increased approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn \nhave decreased significantly in gentrifying areas such as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan \nshow increased approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 
 ```
 
-```{r}
+
+When looking at approval rates over time for low-income applicants, we can see a decrease in approval rates in areas like Bed-Stuy and Crown Heights, which are gentrifying quickly. This might suggest that the properties are not affordable to low-income homeowners. 
+
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
 #approval rates for low income applicants, by NTA faceted by year 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
                                              ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
@@ -232,20 +236,15 @@ approval_rate_5yr %>% left_join(nta_shape, by = "ntacode") %>% ggplot() + geom_s
         axis.line = element_blank(),
         legend.position = c(.8, .3), legend.background = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title ="Approval rates for low income applicants decline in Manhattan, the Bronx, and Brooklyn between 2013 and 2017", subtitle = "More NTAs in Queens experience an increase in approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+        axis.ticks = element_blank()) + labs(title ="Approval rates for low income applicants decline in Manhattan, \nthe Bronx, and Brooklyn between 2013 and 2017", subtitle = "More NTAs in Queens experience an increase in approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
-```{r}
-#map that looks at change in number of loan applications
-#map that groups by NTA rather than census tract - merge early 
 
-hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
-                                             ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
-                                                    ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
-                                                           ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", NA)))))
+This map showcases the way approval rates have changed each year for low-income applicants, with darker areas representing higher approval rates. It is clear that as time passes, the overall picture of the city becomes lighter, and the higher approval rate areas become concentrated in Queens. 
 
+```{r, error = FALSE, message = FALSE, warning = FALSE, eval = FALSE, include=FALSE}
+#change in number of loan applications by NTA
 
-#merge then group by NTA 
 num_apps_change_bk <- hmda_ny_5yrs %>% 
   group_by(ntaname, as_of_year) %>% 
   summarise(n = n()) %>% filter(as_of_year %in% c(2013, 2017), !is.na(ntaname))
@@ -256,24 +255,29 @@ num_apps_change_bk$breaks <- cut(num_apps_change_bk$change, c(-7500, -500, 0, 50
 
 num_apps_change_bk <- num_apps_change_bk %>% left_join(nta_shape, by = "ntaname")
 
-ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641"))
+ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641")) + theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        legend.position = c(.8, .3), legend.background = element_blank(),
+        text = element_text(family = "Meiryo"),
+        axis.ticks = element_blank()) + labs(title = "NEED TO CONSIDER THAT SOME PLACES WILL ALWAYS GET MORE APPS - MAYBE MAKE A PERCENT INCREASE" ,fill = "Change in Number of Loan Applications")
 
 #CARTOGRAM WITH NTA
 #install.packages("cartogram")
 library(cartogram)
 
 #merge nta shapefile and a column of data to be used for sizing
-for_cartogram <- num_apps_change_bk %>% right_join(nta_shape, by = "ntaname") %>% st_as_sf()
-cartogram(for_cartogram, "change",itermax=5)
+# for_cartogram <- num_apps_change_bk %>% right_join(nta_shape, by = "ntaname") %>% st_as_sf()
+# cartogram_cont(for_cartogram, "change")
 
 ```
 
 
-```{r}
+```{r, include = FALSE, eval = FALSE}
 #map with income to loan amount ratios by census tract
-#create income to loan amount
-
 #general rule - can afford to finance a mortgage between 2-2.5x gross yearly income
+
 hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(income_as_part_of_loan = applicant_income_000s/loan_amount_000s) 
 
 
@@ -297,8 +301,9 @@ test$breaks <- cut(test$mean_loan_income_ratio, c(0, 2, 3, 4, 240))
 ggplot(test) + 
   geom_sf(aes(fill = breaks), color = "white", lwd = 0) +  scale_fill_manual(values = c("#1a9641", "#a6d96a", '#e27a48', '#cc4c02'))
 
+# This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 ```
-This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
+
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 apps_per_year_outcome_race <- hmda_ny_5yrs %>% 
@@ -327,7 +332,7 @@ ggplot(approval_rate_year_race,
 ```
 
 
-I was also curious whether loan approval rates by race have changed over the last five years. This graph shows that Asians and Whites have consistently had the highest approval rates. The unknown category is made up of people who did not choose the dislose their race in their mortgage application, however, given that they have the highest approval rates, there is a large chance that this group is made up mostly of White applicants. Most races have had consistent approval rates over the last five years, however, American Indians and Native Alaskans saw a sharp decrease in their loan approval rates in 2016, however their rates have returned to the pre-2016 average. This graph displays important differences in racial approval rates and inspires further research on whether these differences are due to historical differences in wealth or racial discrimination in lending. 
+This graph shows that Asians and Whites have consistently had the highest approval rates. The unknown category is made up of people who did not choose the dislose their race in their mortgage application, however, given that they have the highest approval rates, there is a large chance that this group is made up mostly of White applicants. Most races have had consistent approval rates over the last five years, however, American Indians and Native Alaskans saw a sharp decrease in their loan approval rates in 2016. This graph displays important differences in racial approval rates and inspires further research on whether these differences are due to historical differences in wealth or racial discrimination in lending. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #denial reasons over time
@@ -349,7 +354,7 @@ denial_reasons_year %>%
 ```
 
 
-In order to better understand why different races are denied loans, I look at denial reasons over time, and differences in denial reasons for different races. The following graph explores whether and how denial reasons have changed over time. This graph shows that an insuffiencient debt-to-income ratio is the highest frequency reason for denial. A determination that the property of the value is not high enough to serve as collateral for the requested loan amount ties for the second most frequent reason for denial, along with a poor credit history. While the differences in these rates of denial are minor, the highest frequcny rate suggests that many people are applying for mortgages that the banks believe they are unable to afford on their current incomes. Is this because the property values are high and people want to remain in a certain area or is this because people are simply attracted to things outside of their price ranges? These are some of the research questions raised by the graph. 
+The following graph explores whether and how denial reasons have changed over time. While the differences in these rates of denial are minor, the highest frequcny rate suggests that many people are applying for mortgages that the banks believe they are unable to afford on their current incomes. Is this because the property values are high and people want to remain in a certain area or is this because people are simply attracted to things outside of their price ranges? These are some of the research questions raised by the graph. 
 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height=6}
