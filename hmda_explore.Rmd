@@ -196,7 +196,7 @@ ggplot() + geom_sf(data = census_tract_merged,
         axis.line = element_blank(),
         legend.position = c(.1, .8), legend.background = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn have decreased significantly \nin gentrifying areas such as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan show increased approval rates")
+        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn have decreased significantly \nin gentrifying areas such as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan show increased approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 
 ```
 
@@ -224,16 +224,6 @@ num_apps_change_bk$breaks <- cut(num_apps_change_bk$change, c(-7500, -500, 0, 50
 num_apps_change_bk <- num_apps_change_bk %>% left_join(census_tracts_bk, by = "ntaname")
 
 ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641"))
-
-#make this a symbol map ^^^^
-#using census tracts, since we will only have centroids for census tracts
-num_apps_year <- hmda_ny_5yrs %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n()) %>% filter(as_of_year %in% c(2013, 2017))
-
-num_apps_year$prior <- lag(num_apps_year$tot_apps)
-num_apps_year$change <-as.numeric(num_apps_year$prior -num_apps_year$tot_apps)
-
-census_tracts_bk %>% left_join(num_apps_year, by = c("ct2010" = "census_tract_number"))
-
 
 ```
 
@@ -265,26 +255,6 @@ test$breaks <- cut(test$mean_loan_income_ratio, c(0, 2, 3, 4, 240))
   
 ggplot(test) + 
   geom_sf(aes(fill = breaks), color = "white", lwd = 0) +  scale_fill_manual(values = c("#1a9641", "#a6d96a", '#e27a48', '#cc4c02'))
-
-
-#^ MAKE THIS IS A SYMBOL MAP or the other one
-census_tracts_trans <- st_transform(census_tracts, 26918)
-
-census_tracts_trans$centroids <- st_centroid(census_tracts_trans$geometry)
-
-test2 <- hmda_ny_5yrs %>% filter(as_of_year == 2017, co_applicant_ethnicity_name == "No co-applicant") %>% 
-  group_by(census_tract_number) %>% 
-  summarise(mean_loan_income_ratio = 
-              mean(win_loan_income_ratio, na.rm = TRUE)) %>%
-  left_join(census_tracts_trans, by = c("census_tract_number" = "ct2010"))
-
-#need to split centroids into lat/lon
-test2 <- test2 %>% 
-  mutate(lon = substr(centroids, 3, 18), lat = substr(centroids, 21,36))
-
-ggplot(test) + 
-  geom_sf() + geom_point(data = test2, aes(x = lon, y = lat, size = mean_loan_income_ratio))
-#sort of works 
 
 ```
 This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 

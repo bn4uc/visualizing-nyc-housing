@@ -674,3 +674,41 @@ hmda_ny_5yrs %>%
   ggplot() + geom_line(aes(x = as_of_year, y = n, color = ntaname)) + 
   guides(color = FALSE) + geom_text(aes(label = ntaname))
 
+
+#symbol map of change in number of applications per census tract
+#using census tracts, since we will only have centroids for census tracts
+num_apps_year <- hmda_ny_5yrs %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n()) %>% filter(as_of_year %in% c(2013, 2017))
+
+num_apps_year$prior <- lag(num_apps_year$tot_apps)
+num_apps_year$change <-as.numeric(num_apps_year$tot_apps - num_apps_year$prior)
+
+census_tracts_bk <- census_tracts %>% 
+  filter(boro_name == "Brooklyn")
+census_tracts_bk$centroids <- st_centroid(census_tracts_bk$geometry)
+census_tracts_bk <- census_tracts_bk %>% 
+  mutate(lon = substr(centroids, 3, 18), lat = substr(centroids, 21,36))
+
+num_apps_year <- num_apps_year %>% filter(as_of_year== 2017) %>% 
+  right_join(census_tracts_bk, by = c("census_tract_number" = "ct2010"))
+
+ggplot() + geom_sf(data = census_tracts_bk,fill = "grey", color = "white") + geom_point(data = num_apps_year, aes(x = lon, y = lat, size = change), alpha = .2)
+
+#attempt at symbol map of income to loan ratio
+census_tracts_trans <- st_transform(census_tracts, 26918)
+
+census_tracts_trans$centroids <- st_centroid(census_tracts_trans$geometry)
+
+test2 <- hmda_ny_5yrs %>% filter(as_of_year == 2017, co_applicant_ethnicity_name == "No co-applicant") %>% 
+  group_by(census_tract_number) %>% 
+  summarise(mean_loan_income_ratio = 
+              mean(win_loan_income_ratio, na.rm = TRUE)) %>%
+  left_join(census_tracts_trans, by = c("census_tract_number" = "ct2010"))
+
+#need to split centroids into lat/lon
+test2 <- test2 %>% 
+  mutate(lon = substr(centroids, 3, 18), lat = substr(centroids, 21,36))
+
+ggplot(test) + 
+  geom_sf() + geom_point(data = test2, aes(x = lon, y = lat, size = mean_loan_income_ratio), alpha = .2)
+#sort of works 
+
