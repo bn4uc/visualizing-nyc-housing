@@ -712,3 +712,5 @@ ggplot(test) +
   geom_sf() + geom_point(data = test2, aes(x = lon, y = lat, size = mean_loan_income_ratio), alpha = .2)
 #sort of works 
 
+
+#slopegraph of NTA area approval rates

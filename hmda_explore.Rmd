@@ -54,7 +54,16 @@ hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in%
 
 census_tracts <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
 
+nta_shape <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/Neighborhood_Tabulation_Areas", "geo_export_f14927c2-d9cb-48d6-b521-916e745df67d")
+
 rm(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny)
+
+crosswalk<- read_csv("crosswalk_nta_ct.csv")
+crosswalk$X4 <- NULL
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% left_join(crosswalk, by = c("census_tract_number" = "census_tract")) 
+
+rm(crosswalk)
 ```
 
 ##Home Mortgage Disclosure Act Data - Exploration in New York City 
@@ -62,6 +71,7 @@ rm(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny)
 Home Mortgage Disclosure Act data provides insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and where most are denied, and more. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
+#approval rates by census tract 
 #number of loans apps by census tract
 apps_by_tract <- hmda_ny_5yrs %>% 
   group_by(census_tract_number) %>% 
@@ -201,56 +211,33 @@ ggplot() + geom_sf(data = census_tract_merged,
 ```
 
 ```{r}
-#approval rates for low income applicants, faceted by year 
+#approval rates for low income applicants, by NTA faceted by year 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
                                              ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
                                                     ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
                                                            ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", NA)))))
 
-apps_outcome_Q1 <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year, outcome) %>% summarise(outcome_tot = n())
+apps_outcome_Q1_nta <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(ntacode, as_of_year, outcome) %>% summarise(outcome_tot = n())
 
-apps_total_Q1 <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(census_tract_number, as_of_year) %>% summarise(tot_apps = n())
+apps_total_Q1_nta <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% group_by(ntacode, as_of_year) %>% summarise(tot_apps = n())
 
-approval_rate_5yr_changes <- apps_outcome_Q1 %>% left_join(apps_total_Q1, by = c("census_tract_number", "as_of_year")) %>% filter(outcome == "Approved") %>% mutate(approval_rate = outcome_tot/tot_apps)
+approval_rate_5yr <- apps_outcome_Q1_nta %>% left_join(apps_total_Q1_nta, by = c("ntacode", "as_of_year")) %>% filter(outcome == "Approved") %>% mutate(approval_rate = outcome_tot/tot_apps)
 
-census_tract_merged <- approval_rate_5yr_changes %>% right_join(census_tracts,  by = c("census_tract_number" = "ct2010")) %>% filter(!is.na(as_of_year))
+approval_rate_5yr$breaks <- cut(approval_rate_5yr$approval_rate, c(0, 0.2, 0.4, 0.6, 0.8, 1))
 
-census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, 0.2, 0.4, 0.6, 0.8, 1))
-
-
-ggplot() + geom_sf(data = census_tract_merged, 
-                   aes(fill = breaks), color = "white", lwd = 0) + guides(fill=guide_legend(title="Approval Rate")) +  facet_wrap(~as_of_year) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02')) + theme(axis.text=element_blank(),                      
+#need to merge back with census hmda and then merge that with census tracts
+approval_rate_5yr %>% left_join(nta_shape, by = "ntacode") %>% ggplot() + geom_sf(aes(fill = breaks), lwd = 0) + facet_wrap(~as_of_year) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02')) + guides(fill=guide_legend(title="Approval Rate")) + theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
         legend.position = c(.8, .3), legend.background = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title ="Approval rates for low income applicants decline across most boroughs between 2013 and 2017", subtitle = "Staten Island does not see a general decrease in approval rates" ,caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
-
-
-#try with NTA areas, so that there is less breakup(though this might be confusing with the lines etc, but maybe remove the borders)
-
-apps_outcome_Q1_nta <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% left_join(census_tracts, by = c("census_tract_number" = "ct2010")) %>% group_by(ntaname, as_of_year, outcome) %>% summarise(outcome_tot = n())
-
-apps_total_Q1_nta <- hmda_ny_5yrs %>% filter(income_bins == "Income Quartile 1") %>% left_join(census_tracts, by = c("census_tract_number" = "ct2010")) %>% group_by(ntaname, as_of_year) %>% summarise(tot_apps = n())
-
-approval_rate_5yr <- apps_outcome_Q1_nta %>% left_join(apps_total_Q1_nta, by = c("ntaname", "as_of_year")) %>% filter(outcome == "Approved") %>% mutate(approval_rate = outcome_tot/tot_apps)
-
-#need to merge back with census hmda and then merge that with census tracts
-approval_rate_5yr %>% left_join(census_tracts, by = "ntaname") %>% ggplot() + geom_sf(aes(fill = approval_rate)) + facet_wrap(~as_of_year)
-
-
-census_tract_merged <- approval_rate_5yr_changes %>% right_join(census_tracts,  by = c("census_tract_number" = "ct2010")) %>% filter(!is.na(as_of_year))
-
-census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, 0.2, 0.4, 0.6, 0.8, 1))
-
-
+        axis.ticks = element_blank()) + labs(title ="Approval rates for low income applicants decline in Manhattan, the Bronx, and Brooklyn between 2013 and 2017", subtitle = "More NTAs in Queens experience an increase in approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
 ```{r}
 #map that looks at change in number of loan applications
 #map that groups by NTA rather than census tract - merge early 
-census_tracts_bk <- census_tracts %>% filter(boro_name == "Brooklyn")
 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
                                              ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
@@ -260,17 +247,24 @@ hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_0
 
 #merge then group by NTA 
 num_apps_change_bk <- hmda_ny_5yrs %>% 
-  left_join(census_tracts_bk, by = c("census_tract_number" = "ct2010")) %>% 
   group_by(ntaname, as_of_year) %>% 
   summarise(n = n()) %>% filter(as_of_year %in% c(2013, 2017), !is.na(ntaname))
 
 num_apps_change_bk$prior <- lag(num_apps_change_bk$n)
-num_apps_change_bk$change <-as.numeric(num_apps_change_bk$prior -num_apps_change_bk$n)
+num_apps_change_bk$change <-as.numeric(num_apps_change_bk$n - num_apps_change_bk$prior)
 num_apps_change_bk$breaks <- cut(num_apps_change_bk$change, c(-7500, -500, 0, 500, 7500))
 
-num_apps_change_bk <- num_apps_change_bk %>% left_join(census_tracts_bk, by = "ntaname")
+num_apps_change_bk <- num_apps_change_bk %>% left_join(nta_shape, by = "ntaname")
 
 ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_manual(values = c('#cc4c02', '#e27a48', "#a6d96a", "#1a9641"))
+
+#CARTOGRAM WITH NTA
+#install.packages("cartogram")
+library(cartogram)
+
+#merge nta shapefile and a column of data to be used for sizing
+for_cartogram <- num_apps_change_bk %>% right_join(nta_shape, by = "ntaname") %>% st_as_sf()
+cartogram(for_cartogram, "change",itermax=5)
 
 ```
 
