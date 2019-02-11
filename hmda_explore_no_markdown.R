@@ -713,4 +713,51 @@ ggplot(test) +
 #sort of works 
 
 
+#map of loan approval rates
+df_for_chloropleth_black_approval <- hmda_ny_5yrs %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_apps = n()) %>% 
+  left_join(approval_counts_by_race, 
+            by = c("census_tract_number", "applicant_race_name_1")) %>%
+  mutate(approval_rate = total_approved/total_apps) %>%
+  filter(applicant_race_name_1== "Black or African American")
+
+df_for_chloropleth_black_approval <- df_for_chloropleth_black_approval %>% 
+  mutate(approval_rate_round = round(approval_rate, 2))
+
+#upload shapefiles
+census_tracts <- rgdal::readOGR("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
+
+census_tract_merged_black <- sp::merge(x = census_tracts,
+                                       y = df_for_chloropleth_black_approval,
+                                       by.x ="ct2010", by.y= "census_tract_number", all.x = TRUE)
+
+#dealing with ggplot
+#tidy the spatial dataframe, make it into a dataframe
+census_tracts_merged_black_df <- tidy(census_tract_merged_black)
+#need to re-ad datat to it, by create a category it can merge with our data
+census_tract_merged_black$polyID <- sapply(slot(census_tract_merged_black, "polygons"),
+                                           function(x) slot(x, "ID"))
+#merge back with our data
+census_tracts_merged_black_df <- merge(census_tracts_merged_black_df, 
+                                       census_tract_merged_black, 
+                                       by.x = "id", by.y="polyID")
+
+census_tracts_merged_black_df$breaks <- cut(census_tracts_merged_black_df$approval_rate, c(0, .2, .4, .6, .8, 1))
+
+#plot- black loan approval rates map ####
+ggplot() + 
+  geom_polygon(data = census_tracts_merged_black_df,
+               aes(x = long, y = lat, group = group, fill = breaks)) + 
+  scale_fill_brewer("Approval Rate", palette = "OrRd") +
+  labs(title = "Highest loan approval rates for Blacks are in \nStaten Island and Queens", 
+       subtitle = "When compared to approval rates that do not consider race, \nmost census tracts have lower approval rates for Blacks", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB") + 
+  theme(line = element_blank(),                          
+        axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_blank(), 
+        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
+
+
 #slopegraph of NTA area approval rates

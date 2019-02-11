@@ -99,8 +99,7 @@ census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4
 ggplot() + 
   geom_sf(data = census_tract_merged,
                aes(fill = breaks), color = "white", lwd = 0) +
-  labs(title = "Most census tracts have approval rates between \n60% and 80%", 
-       subtitle = "The highest approval rates are mostly found \nin Queens, while rates dip below 40% in historically \nlower-income areas, such as East Brooklyn",
+  labs(title = "Most census tracts have approval rates between \n60% and 80%", subtitle= "The highest approval rates are found \nin Queens, while rates dip below 40% in historically \ndisdvantaged parts of the city, such as East Brooklyn"
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
@@ -115,7 +114,7 @@ ggplot() +
 
 The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in loan approval rates across the city, there is not a clear distinction between certain areas with higher approval rates, for example, there are high approval tracts in Brooklyn and the Bronx that are not know for being high income (as one might expect). In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
 
-```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE, eval = FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE}
 #approval rates by race by census tract
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
@@ -129,50 +128,25 @@ df_for_chloropleth_race_approval <- hmda_ny_5yrs %>%
             by = c("census_tract_number", "applicant_race_name_1")) %>%
   mutate(approval_rate = total_approved/total_apps)
 
-df_for_chloropleth_black_approval <- hmda_ny_5yrs %>% 
-  group_by(census_tract_number, applicant_race_name_1) %>% 
-  summarise(total_apps = n()) %>% 
-  left_join(approval_counts_by_race, 
-            by = c("census_tract_number", "applicant_race_name_1")) %>%
-  mutate(approval_rate = total_approved/total_apps) %>%
-  filter(applicant_race_name_1== "Black or African American")
-
-df_for_chloropleth_black_approval <- df_for_chloropleth_black_approval %>% 
-  mutate(approval_rate_round = round(approval_rate, 2))
-
-#upload shapefiles
-census_tracts <- rgdal::readOGR("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
-
-census_tract_merged_black <- sp::merge(x = census_tracts,
-                                       y = df_for_chloropleth_black_approval,
-                                       by.x ="ct2010", by.y= "census_tract_number", all.x = TRUE)
+census_tract_merged <- left_join(df_for_chloropleth_race_approval,census_tracts,
+    by = c("census_tract_number" ="ct2010")) %>% 
+      st_as_sf()
 
 #dealing with ggplot
-#tidy the spatial dataframe, make it into a dataframe
-census_tracts_merged_black_df <- tidy(census_tract_merged_black)
-#need to re-ad datat to it, by create a category it can merge with our data
-census_tract_merged_black$polyID <- sapply(slot(census_tract_merged_black, "polygons"),
-                               function(x) slot(x, "ID"))
-#merge back with our data
-census_tracts_merged_black_df <- merge(census_tracts_merged_black_df, 
-                          census_tract_merged_black, 
-                          by.x = "id", by.y="polyID")
+census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4, .6, .8, 1)) 
 
-census_tracts_merged_black_df$breaks <- cut(census_tracts_merged_black_df$approval_rate, c(0, .2, .4, .6, .8, 1))
-
-#plot- black loan approval rates map ####
-ggplot() + 
-  geom_polygon(data = census_tracts_merged_black_df,
-               aes(x = long, y = lat, group = group, fill = breaks)) + 
-  scale_fill_brewer("Approval Rate", palette = "OrRd") +
-  labs(title = "Highest loan approval rates for Blacks are in \nStaten Island and Queens", 
-       subtitle = "When compared to approval rates that do not consider race, \nmost census tracts have lower approval rates for Blacks", 
-       caption = "Home Mortgage Disclosure Act Data, CFPB") + 
-  theme(line = element_blank(),                          
-        axis.text=element_blank(),                      
+#plot- approval rates by census block #### 
+ggplot(data = census_tract_merged) + 
+  geom_sf(data = census_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1) + 
+  labs(title = "Asians and Whites have high loan approval rates across New York City", subtitle = "Other racial groups have lower rates",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
-        panel.background = element_blank(), 
-        text = element_text(family = "Meiryo")) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
+
 
 ```
 
@@ -206,7 +180,7 @@ ggplot() + geom_sf(data = census_tract_merged,
         axis.line = element_blank(),
         legend.position = c(.2, .8), legend.background = element_blank(),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn \nhave decreased significantly in gentrifying areas such as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan \nshow increased approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+        axis.ticks = element_blank()) + labs(title = "Approval rates for low-income applicants in Brooklyn \nhave decreased significantly in gentrifying areas \nsuch as Bed-Stuy, East Williamsburg, and Crown Heights", subtitle = "However, many areas slightly further from Manhattan \nshow increased approval rates", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 
 ```
 
@@ -325,7 +299,7 @@ ggplot(approval_rate_year_race,
        aes(x = as_of_year, y = outcome_rate, color = race_alternative)) +
   geom_point() + geom_line() + 
   scale_x_continuous(breaks = c(2013, 2014, 2015, 2016, 2017)) + 
-  labs(title = "Loan approval rates for Blacks are consistently below Whites and Asians", x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  labs(title = "Loan approval rates for Black applicants \n are consistently below those of Whites and Asians applicants", x = "Year", y = "Approval Rate", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   geom_text_repel(data = filter(approval_rate_year_race, as_of_year == 2017),
                   aes(x = 2017, label=race_alternative)) + 
   theme(legend.position = "none", text = element_text(family = "Meiryo"), panel.background = element_rect(fill = '#F2F5F2'), panel.grid.minor = element_line(linetype = "dashed"), axis.ticks = element_blank()) + scale_color_manual(values = c('#E8291A','#FD7400', '#004358', '#1f8a70', '#BEDB39'))
@@ -486,7 +460,7 @@ ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
   theme(text = element_text(family = "Meiryo"), 
          panel.background = element_rect(fill = '#F2F5F2'), panel.grid.major = element_line(color = "#404040"), panel.grid.minor = element_blank()) +
   labs(fill = "Outcome", x = "Gender of Applicant", y = "Income (in $1,000s)", 
-       title = "There is a difference in the median income of \nmen and women who are approved for loans", 
+       title = "On average, male applicants have higher incomes than women", 
        subtitle = "While approval relies on other factors, the distribution \nof incomes within loan application outcomes differs between genders \nand reflects systemic inequality in approvals or loans, incomes, or both.", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
