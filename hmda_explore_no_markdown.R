@@ -761,3 +761,37 @@ ggplot() +
 
 
 #slopegraph of NTA area approval rates
+
+outcome_tot_nta <- hmda_ny_5yrs %>% filter(startsWith(ntacode, "BK")) %>%
+  group_by(ntaname, as_of_year, outcome) %>% summarise(apps = n())
+
+tot_apps_nta <- hmda_ny_5yrs %>%filter(startsWith(ntacode, "BK")) %>% 
+  group_by(ntaname, as_of_year) %>% summarise(totals = n())
+
+tot_apps_nta <- outcome_tot_nta %>% 
+  left_join(tot_apps_nta, by = c("ntaname", "as_of_year")) %>% 
+  mutate(rates = apps/totals) %>% 
+  filter(as_of_year %in% c(2013, 2017), outcome == "Approved")
+
+tot_apps_nta$prior <- lag(tot_apps_nta$rates)
+tot_apps_nta$change <- tot_apps_nta$rates - tot_apps_nta$prior
+
+tot_apps_nta %>% 
+  ggplot(aes(x = as_of_year, y = rates, group = ntaname)) + 
+  geom_line(aes(color = ntaname)) + 
+  geom_point(aes(color = ntaname)) + 
+  theme(legend.position = "none") + 
+  theme(panel.border     = element_blank()) +
+  # Remove just about everything from the y axis
+  theme(axis.title.y     = element_blank()) +
+  # Remove a few things from the x axis and increase font size
+  theme(axis.title.x     = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(axis.text.x.top      = element_text(size=12)) +
+  # Remove x & y tick marks
+  theme(axis.ticks       = element_blank()) + 
+  geom_text_repel(data = tot_apps_nta %>% filter(as_of_year == 2017, change > .05 | change < -.05), 
+          aes(label = ntaname), 
+            hjust = 1.35, fontface = "bold", size = 4)
+  
+  
