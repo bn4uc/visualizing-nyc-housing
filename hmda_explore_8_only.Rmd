@@ -56,11 +56,21 @@ hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(race_alternative = applicant_race_name_1
 hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in% 
                                       c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
 
-hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
-                                             ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
-                                                    ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
-                                                           ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", "Unknown")))))
+hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative == "Black or African American")] <- "Black"
 
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
+    ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
+        ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
+            ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4",
+                   "Unknown")))))
+
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(boro = 
+        ifelse(county_name == "New York County", "Manhattan", 
+            ifelse(county_name == "Kings County", "Brooklyn", 
+              ifelse(county_name == "Queens County", "Queens", 
+                     ifelse(county_name == "Bronx County", "Bronx",
+                            ifelse(county_name == "Richmond County", 
+                                   "Staten Island", NA))))))
 
 census_tracts <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
 
@@ -82,18 +92,14 @@ rm(crosswalk)
 Homeownership is one of the most important ways of acculating wealth. In New York City, proprty values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group, allows us to better understand the way opportunities within the city are changing.
 
 ##Who is applying for mortgages? 
-```{r}
+```{r, fig.width=10, fig.height=12, fig.align="center"}
 #maybe like who applies for mortgages in nyc, have a pie chart of races, or the sunburst thing, or tree map (race, gender, income bins), boxplot of incomes by race, 
 
-hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(sex_simple = applicant_sex_name)
-hmda_ny_5yrs$sex_simple[which(hmda_ny_5yrs$sex_simple %in% 
-                                      c("Not applicable", "Information not provided by applicant in mail, Internet, or telephone application"))] <- "Unknown"
-
 #treemap for counties and race 
-hmda_ny_5yrs %>% group_by(county_name, race_alternative) %>% summarise(n = n()) %>% treemap(index = c("county_name", "race_alternative"),vSize ="n")
+hmda_ny_5yrs %>% group_by(county_name, race_alternative) %>% summarise(n = n()) %>% treemap(index = c("county_name", "race_alternative"),vSize ="n", title = "Loan Applicants Organized by County and Race", fontsize.labels = c(20,15), align.labels = list(c("left","top"),c("right","bottom")), palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'), fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', fontsize.title = 24)
 
 #treemap of counties and income bins
-hmda_ny_5yrs %>% group_by(county_name, income_bins) %>% summarise(n = n()) %>% treemap(index = c("county_name", "income_bins"),vSize ="n")
+hmda_ny_5yrs %>% group_by(county_name, income_bins) %>% summarise(n = n()) %>% treemap(index = c("county_name", "income_bins"),vSize ="n", fontsize.labels = c(25,15), title = "Loan Applicants Organized by County and Income Quartiles", align.labels = list(c("left","top"),c("right","bottom")), palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'), fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', fontsize.title = 24)
 
 ```
 
