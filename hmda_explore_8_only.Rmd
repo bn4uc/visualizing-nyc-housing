@@ -1,0 +1,99 @@
+---
+title: "An Exploration of NYC Home Mortgage Disclosure Act Data"
+output: 
+  html_document: 
+    code_folding: hide
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+library(maptools)
+library(ggmap)
+library(broom)
+library(ggrepel)
+library(statar)
+library(sf)
+library(treemap)
+```
+
+```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE}
+#loading data and making preliminary changes 
+options("scipen"=100, "digits"=4)
+
+hmda13_ny <- read_csv("hmda13_ny.csv")
+hmda14_ny <- read_csv("hmda14_ny.csv")
+hmda15_ny <- read_csv("hmda15_ny.csv")
+hmda16_ny <- read_csv("hmda16_ny.csv")
+hmda17_ny <- read_csv("hmda17_ny.csv")
+
+hmda_ny_5yrs <- rbind(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny) %>%
+  mutate(census_tract_number = gsub("\\.", "", census_tract_number)) %>% filter(county_name %in% c("Bronx County", "Kings County", "Queens County", "New York County", "Richmond County"))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(outcome = ifelse(action_taken_name %in% 
+                            c("Application approved but not accepted",
+                              "Loan originated", "Loan purchased by the institution"),"Approved", 
+                          ifelse(action_taken_name %in%
+                                   c("Application denied by financial institution",
+                                     "Preapproval request denied by financial institution"),
+                                 "Denied", "Other")))
+
+hmda_ny_5yrs$applicant_race_name_1[which(hmda_ny_5yrs$applicant_race_name_1 %in%
+                                           c("Information not provided by applicant in mail, Internet, or telephone application",
+                                             "Not applicable"))] <- "Unknown"
+
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(race_alternative = applicant_race_name_1)
+hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in% 
+                                      c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"))] <- "Other"
+
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
+                                             ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
+                                                    ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
+                                                           ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4", "Unknown")))))
+
+
+census_tracts <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
+
+nta_shape <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/Neighborhood_Tabulation_Areas", "geo_export_f14927c2-d9cb-48d6-b521-916e745df67d")
+
+rm(hmda13_ny, hmda14_ny, hmda15_ny, hmda16_ny, hmda17_ny)
+
+crosswalk<- read_csv("crosswalk_nta_ct.csv")
+crosswalk$X4 <- NULL
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% left_join(crosswalk, by = c("census_tract_number" = "census_tract")) 
+
+rm(crosswalk)
+```
+
+
+#Overview 
+
+Homeownership is one of the most important ways of acculating wealth. In New York City, proprty values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group, allows us to better understand the way opportunities within the city are changing.
+
+##Who is applying for mortgages? 
+```{r}
+#maybe like who applies for mortgages in nyc, have a pie chart of races, or the sunburst thing, or tree map (race, gender, income bins), boxplot of incomes by race, 
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(sex_simple = applicant_sex_name)
+hmda_ny_5yrs$sex_simple[which(hmda_ny_5yrs$sex_simple %in% 
+                                      c("Not applicable", "Information not provided by applicant in mail, Internet, or telephone application"))] <- "Unknown"
+
+#treemap for counties and race 
+hmda_ny_5yrs %>% group_by(county_name, race_alternative) %>% summarise(n = n()) %>% treemap(index = c("county_name", "race_alternative"),vSize ="n")
+
+#treemap of counties and income bins
+hmda_ny_5yrs %>% group_by(county_name, income_bins) %>% summarise(n = n()) %>% treemap(index = c("county_name", "income_bins"),vSize ="n")
+
+```
+
