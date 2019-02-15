@@ -25,7 +25,7 @@ library(sf)
 library(treemap)
 ```
 
-```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE, cache = TRUE}
 #loading data and making preliminary changes 
 options("scipen"=100, "digits"=4)
 
@@ -92,14 +92,67 @@ rm(crosswalk)
 Homeownership is one of the most important ways of acculating wealth. In New York City, proprty values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group, allows us to better understand the way opportunities within the city are changing.
 
 ##Who is applying for mortgages? 
-```{r, fig.width=10, fig.height=12, fig.align="center"}
-#maybe like who applies for mortgages in nyc, have a pie chart of races, or the sunburst thing, or tree map (race, gender, income bins), boxplot of incomes by race, 
+
+```{r, fig.width=10, fig.height=9, fig.align="center"}
+#Loan applications are split pretty evenly between Manhattan, Brooklyn, and Queens, with White applicants representing a large share of the applications. The Unknown category is made up of applicants who did not disclose their race in their loan applications. Disparities in incomes between boroughs are shown in the second graph. 
 
 #treemap for counties and race 
-hmda_ny_5yrs %>% group_by(county_name, race_alternative) %>% summarise(n = n()) %>% treemap(index = c("county_name", "race_alternative"),vSize ="n", title = "Loan Applicants Organized by County and Race", fontsize.labels = c(20,15), align.labels = list(c("left","top"),c("right","bottom")), palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'), fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', fontsize.title = 24)
+hmda_ny_5yrs %>% group_by(boro, race_alternative) %>% 
+  summarise(n = n()) %>% 
+  treemap(index = c("boro", "race_alternative"),
+          vSize ="n", title = "Loan Applicants Organized by Borough and Race \nHMDA Data 2013-2017",
+          fontsize.labels = c(20,15), 
+          align.labels = list(c("left","top"),c("right","bottom")),
+          palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
+          fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
+          fontsize.title = 24)
 
 #treemap of counties and income bins
-hmda_ny_5yrs %>% group_by(county_name, income_bins) %>% summarise(n = n()) %>% treemap(index = c("county_name", "income_bins"),vSize ="n", fontsize.labels = c(25,15), title = "Loan Applicants Organized by County and Income Quartiles", align.labels = list(c("left","top"),c("right","bottom")), palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'), fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', fontsize.title = 24)
+hmda_ny_5yrs %>% group_by(boro, income_bins) %>% 
+  summarise(n = n()) %>% 
+  treemap(index = c("boro", "income_bins"),
+          vSize ="n", fontsize.labels = c(25,15), 
+          title = "Loan Applicants Organized by Borough and Income Quartiles \nHMDA Data 2013-2017",
+          align.labels = list(c("left","top"),c("right","bottom")), 
+          palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
+          fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
+          fontsize.title = 24)
 
 ```
 
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#looking at differences in approval rates by male/female
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
+
+ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
+       aes(y=win_income, x=applicant_sex_name, fill=outcome), alpha = .3) +
+  geom_boxplot() + scale_y_log10(expand=c(0,0)) + 
+  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+         panel.background = element_rect(fill = '#F2F5F2'),
+        panel.grid.major = element_line(color = "#404040"), 
+        panel.grid.minor = element_blank()) +
+  labs(fill = "Outcome", x = "Gender of Applicant", 
+       y = "Income (in $1,000s, Log Scale)", 
+       title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
+       subtitle = "Income by Gender, grouped by Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+
+#trying to add summary statistics 
+
+violin_data <- filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"))
+
+ggplot(data = violin_data) +
+  geom_violin(aes(y=win_income, x=applicant_sex_name, fill=outcome)) + 
+  scale_y_log10(expand=c(0,0)) + 
+  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+         panel.background = element_rect(fill = '#F2F5F2'),
+        panel.grid.major = element_line(color = "#404040"), 
+        panel.grid.minor = element_blank()) +
+  labs(fill = "Outcome", x = "Gender of Applicant", 
+       y = "Income (in $1,000s, Log Scale)", 
+       title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
+       subtitle = "Income by Gender, grouped by Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+
+```
