@@ -258,7 +258,6 @@ ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_m
 
 hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(income_as_part_of_loan = applicant_income_000s/loan_amount_000s) 
 
-
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
 
@@ -287,6 +286,13 @@ ggplot(test) +
         axis.ticks = element_blank()) + labs(title = "Most census tracts have an average loan-to-income ratio over 3.", subtitle = "The general rule is that one can finance a mortgage between 2-2.5 times \ntheir annual income. This means that many applicants are \nattempting to borrow outside of their means.", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Loan-to-income ratio")
 
 # This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
+
+
+#violin plots 
+ggplot(hmda_ny_5yrs %>% filter(as_of_year == 2017)) + 
+  geom_violin(aes(y = win_loan_income_ratio, x = outcome)) + 
+  ylim(c(0, 20)) + stat_summary(aes(x = outcome, y = win_loan_income_ratio), fun.y = "mean", geom = "line") + coord_flip() + geom_vline(yintercept = 3)
+  
 ```
 
 
