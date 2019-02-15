@@ -22,7 +22,7 @@ library(broom)
 library(ggrepel)
 library(statar)
 library(sf)
-library(treemap)
+library(treemapify)
 ```
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE, cache = TRUE}
@@ -58,10 +58,12 @@ hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative %in%
 
 hmda_ny_5yrs$race_alternative[which(hmda_ny_5yrs$race_alternative == "Black or African American")] <- "Black"
 
-hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:73), "Income Quartile 1", 
-    ifelse(applicant_income_000s %in% c(74:108), "Income Quartile 2", 
-        ifelse(applicant_income_000s %in% c(109:180), "Income Quartile 3", 
-            ifelse(applicant_income_000s %in% c(181:133549), "Income Quartile 4",
+summary(hmda_ny_5yrs$applicant_income_000s)
+
+hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(income_bins = ifelse(applicant_income_000s %in% c(1:76), "Income Quartile 1", 
+    ifelse(applicant_income_000s %in% c(77:116), "Income Quartile 2", 
+        ifelse(applicant_income_000s %in% c(117:204), "Income Quartile 3", 
+            ifelse(applicant_income_000s %in% c(205:133549), "Income Quartile 4",
                    "Unknown")))))
 
 hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(boro = 
@@ -97,27 +99,35 @@ Homeownership is one of the most important ways of acculating wealth. In New Yor
 #Loan applications are split pretty evenly between Manhattan, Brooklyn, and Queens, with White applicants representing a large share of the applications. The Unknown category is made up of applicants who did not disclose their race in their loan applications. Disparities in incomes between boroughs are shown in the second graph. 
 
 #treemap for counties and race 
-hmda_ny_5yrs %>% group_by(boro, race_alternative) %>% 
-  summarise(n = n()) %>% 
-  treemap(index = c("boro", "race_alternative"),
-          vSize ="n", title = "Loan Applicants Organized by Borough and Race \nHMDA Data 2013-2017",
-          fontsize.labels = c(20,15), 
-          align.labels = list(c("left","top"),c("right","bottom")),
-          palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
-          fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
-          fontsize.title = 24)
+data_tree <- hmda_ny_5yrs %>% group_by(boro, race_alternative) %>% 
+  summarise(n = n())
 
-#treemap of counties and income bins
-hmda_ny_5yrs %>% group_by(boro, income_bins) %>% 
-  summarise(n = n()) %>% 
-  treemap(index = c("boro", "income_bins"),
-          vSize ="n", fontsize.labels = c(25,15), 
-          title = "Loan Applicants Organized by Borough and Income Quartiles \nHMDA Data 2013-2017",
-          align.labels = list(c("left","top"),c("right","bottom")), 
-          palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
-          fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
-          fontsize.title = 24)
+ggplot(data_tree, aes(area =n, label = race_alternative, subgroup = boro, fill = race_alternative)) +
+  geom_treemap() + 
+  geom_treemap_subgroup_border(color = '#F2F5F2') + 
+  geom_treemap_text(place= "bottomright", color = '#F2F5F2',
+                    fontface = "italic") + 
+  geom_treemap_subgroup_text(place = "topleft", color = '#F2F5F2') + 
+  scale_fill_manual(values = 
+                      c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) +
+  labs(title = "Loan Applicants Organized by Borough and \nRace HMDA Data 2013-2017") + 
+  theme(text = element_text(family = "Meiryo"), 
+        legend.position = "none", plot.title = element_text(size = 24))
 
+data_tree <- hmda_ny_5yrs %>% group_by(boro, income_bins) %>% 
+  summarise(n = n())
+
+ggplot(data_tree, aes(area =n, label = income_bins, subgroup = boro, fill = income_bins)) +
+  geom_treemap() + 
+  geom_treemap_subgroup_border(color = '#F2F5F2') + 
+  geom_treemap_text(place= "bottomright", color = '#F2F5F2',
+                    fontface = "italic") + 
+  geom_treemap_subgroup_text(place = "topleft", color = '#F2F5F2') + 
+  scale_fill_manual(values = 
+                      c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) +
+  labs(title = "Loan Applicants Organized by Borough and \nIncome Quartiles HMDA Data 2013-2017") + 
+  theme(text = element_text(family = "Meiryo"), 
+        legend.position = "none", plot.title = element_text(size = 20))
 ```
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="center"}
@@ -181,13 +191,14 @@ ggplot() +
         plot.subtitle = element_text(face = "italic"),
         legend.position = c(0.25,.75),
         text = element_text(family = "Meiryo"), 
+        plot.title = element_text(size = 20),
         axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nLoan Applications \nApproved")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f"))
 ```
 
 The highest approval rates are in Bay Terrace/Clearview and Forest Hills, Queens, and Prospect Heights, Brooklyn. While Bay Terrace and Prospect Heights are known as affluent neighborhoods, Forest Hills is known for being diverse and middle-income. The lowest approval rates are found low-income neighborhoods such as Far Rockaway, Queens; Parkchester, Bronx; and Starrett City, Brooklyn. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.height= 15}
-#approval rates by race by nta
+#approval rates by race by nta facet map with race (MAYBE REPLACE ONE ABOVE)
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
   group_by(ntaname, applicant_race_name_1) %>% 
@@ -219,6 +230,49 @@ ggplot(data = nta_tract_merged) +
         legend.position = "bottom",
         plot.subtitle = element_text(face = "italic"),
         text = element_text(family = "Meiryo"), 
+        plot.title = element_text(size = 20),
         axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
 
+```
+
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.height=10, fig.width=11}
+#loan application outcome rates by race and year (facet_grid)
+
+#total loans per quartile, year, race
+quartile_race_year <- hmda_ny_5yrs %>% filter(income_bins != "Unknown") %>% 
+  group_by(income_bins, race_alternative, as_of_year, county_name) %>% 
+  summarise(total = n())
+
+quartile_race_year$race_alternative[which(quartile_race_year$race_alternative == "Black or African American")] <- "Black"
+
+quartile_race_year_outcome <- hmda_ny_5yrs %>% 
+  filter(income_bins != "Unknown") %>% 
+  group_by(income_bins, race_alternative, outcome, as_of_year, county_name) %>% 
+  summarise(per_outcome = n())
+
+quartile_race_year_outcome$race_alternative[which(quartile_race_year_outcome$race_alternative == "Black or African American")] <- "Black"
+
+highlights <- data.frame(income_bins =c("Income Quartile 1"), race_alternative =c("Black", "Other"))
+
+quartile_race_year_outcome %>% 
+  left_join(quartile_race_year, 
+            by = c("income_bins", "race_alternative", "as_of_year", "county_name")) %>% 
+  mutate(outcome_rate = per_outcome/total*100) %>% 
+  filter(race_alternative %in% c("Asian", "White", "Black", "Other"),
+         county_name == "Kings County", !is.na(income_bins)) %>% 
+  ggplot() + geom_line(aes(x = as_of_year, y = outcome_rate, color = outcome)) + 
+  facet_wrap(race_alternative~income_bins) + 
+  scale_color_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+        plot.subtitle = element_text(face = "italic"),
+        plot.title = element_text(size = 20),
+        panel.background = element_rect(fill = '#F2F5F2'), 
+        panel.spacing = unit(1.5, "lines"), legend.position = "bottom", axis.ticks = element_blank()) + 
+  labs(title = "Loan Approval Rates in Brooklyn for Low-to-Middle Income Blacks \nand Other Group has been Decreasing, while most other Races and Quartiles have Steady Rates", 
+       subtitle = "Approval Rates per Year by Income Quartiles and Race",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017",
+       color = "Outcome", x = "Year", y = "Approval Rate") + 
+  geom_rect(data = highlights, 
+            aes(xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf), 
+            fill = '#0D177F', alpha= .2)
 ```

@@ -816,5 +816,22 @@ data_tree <- hmda_ny_5yrs %>% group_by(boro, race_alternative) %>%
 treemap_coords <- treemapify(data_tree, area = "n", subgroup2 = "race_alternative", subgroup = "boro")
 ggplot(treemap_coords)
 
-ggplot(hmda_ny_5yrs, aes(area =count, subgroup = boro, label = race_alternative)) +
-  geom_treemap()
+ggplot(data_tree, aes(area =n, label = race_alternative, subgroup = boro, fill = race_alternative)) +
+  geom_treemap() + 
+  geom_treemap_subgroup_border(color = '#F2F5F2') + 
+  geom_treemap_text(place= "bottomright", color = '#F2F5F2', fontface = "italic") + 
+  geom_treemap_subgroup_text(place = "topleft", color = '#F2F5F2') + 
+  scale_fill_manual(values = c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) +
+  labs(title = "Loan Applicants Organized by Borough and Race HMDA Data 2013-2017")
+
+#OLD version 
+#treemap of counties and income bins
+hmda_ny_5yrs %>% group_by(boro, income_bins) %>% 
+  summarise(n = n()) %>% 
+  treemap(index = c("boro", "income_bins"),
+          vSize ="n", fontsize.labels = c(25,15), 
+          title = "Loan Applicants Organized by Borough and Income Quartiles \nHMDA Data 2013-2017",
+          align.labels = list(c("left","top"),c("right","bottom")), 
+          palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
+          fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
+          fontsize.title = 24)
