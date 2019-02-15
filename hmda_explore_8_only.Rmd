@@ -210,13 +210,14 @@ nta_tract_merged$breaks <- cut(nta_tract_merged$approval_rate, c(0, 20, 40, 60, 
 #plot- approval rates by census block #### 
 ggplot(data = nta_tract_merged) + 
   geom_sf(data = nta_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
-  labs(title = "Asians and Whites have high loan approval rates across New York City", subtitle = "Other racial groups have lower rates",
+  labs(title = "Asians, Whites, and Unknown Group have \nHigh Loan Approval Rates across New York City", subtitle = "Approval Rates by Neighborhood Tabulation Area (NTA) for each Race",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
         legend.position = "bottom",
+        plot.subtitle = element_text(face = "italic"),
         text = element_text(family = "Meiryo"), 
         axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
 
