@@ -120,39 +120,105 @@ hmda_ny_5yrs %>% group_by(boro, income_bins) %>%
 
 ```
 
-```{r, error = FALSE, message = FALSE, warning = FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="center"}
 #looking at differences in approval rates by male/female
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
 
-ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male")),
+#filter by people without co-applicants
+ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"), co_applicant_ethnicity_name == "No co-applicant"),
        aes(y=win_income, x=applicant_sex_name, fill=outcome), alpha = .3) +
-  geom_boxplot() + scale_y_log10(expand=c(0,0)) + 
+  geom_boxplot(outlier.size = .5) + scale_y_log10(expand=c(0,0)) + 
   scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
          panel.background = element_rect(fill = '#F2F5F2'),
-        panel.grid.major = element_line(color = "#404040"), 
+        panel.grid.major = element_line(color = "#404040"),
+        plot.subtitle = element_text(face = "italic"),
         panel.grid.minor = element_blank()) +
   labs(fill = "Outcome", x = "Gender of Applicant", 
        y = "Income (in $1,000s, Log Scale)", 
        title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
-       subtitle = "Income by Gender, grouped by Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+       subtitle = "Income by Gender, grouped by Loan Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+```
 
-#trying to add summary statistics 
+##Outcomes of Loan Applications
 
-violin_data <- filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"))
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="center"}
+#approval rates by nta
+#number of loans apps by nta
+apps_by_nta <- hmda_ny_5yrs %>% 
+  group_by(ntaname) %>% 
+  summarise(total_apps = n())
 
-ggplot(data = violin_data) +
-  geom_violin(aes(y=win_income, x=applicant_sex_name, fill=outcome)) + 
-  scale_y_log10(expand=c(0,0)) + 
-  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
-  theme(text = element_text(family = "Meiryo"), 
-         panel.background = element_rect(fill = '#F2F5F2'),
-        panel.grid.major = element_line(color = "#404040"), 
-        panel.grid.minor = element_blank()) +
-  labs(fill = "Outcome", x = "Gender of Applicant", 
-       y = "Income (in $1,000s, Log Scale)", 
-       title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
-       subtitle = "Income by Gender, grouped by Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+#approvals by nta
+approval_counts_by_nta <- hmda_ny_5yrs %>% 
+  filter(outcome == "Approved") %>% 
+  group_by(ntaname) %>% 
+  summarise(total_approved = n())
+
+approval_rates_by_nta <- 
+  approval_counts_by_nta %>% 
+  left_join(apps_by_nta, by = "ntaname") %>% 
+  mutate(approval_rate = total_approved/total_apps*100)
+
+nta_merged <- left_join(nta_shape, approval_rates_by_nta,
+    by = c("ntaname")) %>% 
+      st_as_sf()
+
+#dealing with ggplot
+nta_merged$breaks <- cut(nta_merged$approval_rate, c(40, 50, 60, 70, 80)) 
+
+#plot- approval rates by census block #### 
+ggplot() + 
+  geom_sf(data = nta_merged,
+               aes(fill = breaks), color = "white", lwd = 0) +
+  labs(title = "Most Neighborhoods have Loan Approval Rates between \n50% and 60% ", subtitle= "Loan Approval Rates by Neighborhood Tabulation Area (NTA)",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        plot.subtitle = element_text(face = "italic"),
+        legend.position = c(0.25,.75),
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nLoan Applications \nApproved")) + scale_fill_manual(values = c('#ffffd4','#f7c48f','#e68a4d', '#cc4c02'))
+```
+
+The highest approval rates are in Bay Terrace/Clearview and Forest Hills, Queens, and Prospect Heights, Brooklyn. While Bay Terrace and Prospect Heights are known as affluent neighborhoods, Forest Hills is known for being diverse and middle-income. The lowest approval rates are found low-income neighborhoods such as Far Rockaway, Queens; Parkchester, Bronx; and Starrett City, Brooklyn. 
+
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.width = 15, fig.height=15}
+#approval rates by race by census tract
+approval_counts_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Approved") %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_approved = n())
+
+df_for_chloropleth_race_approval <- hmda_ny_5yrs %>% 
+  group_by(census_tract_number, applicant_race_name_1) %>% 
+  summarise(total_apps = n()) %>% 
+  left_join(approval_counts_by_race, 
+            by = c("census_tract_number", "applicant_race_name_1")) %>%
+  mutate(approval_rate = total_approved/total_apps)
+
+census_tract_merged <- left_join(df_for_chloropleth_race_approval,census_tracts,
+    by = c("census_tract_number" ="ct2010")) %>% 
+      st_as_sf()
+
+#dealing with ggplot
+census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4, .6, .8, 1)) 
+
+#plot- approval rates by census block #### 
+ggplot(data = census_tract_merged) + 
+  geom_sf(data = census_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
+  labs(title = "Asians and Whites have high loan approval rates across New York City", subtitle = "Other racial groups have lower rates",
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
+  theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        legend.position = "bottom",
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
+
 
 ```

@@ -794,4 +794,27 @@ tot_apps_nta %>%
           aes(label = ntaname), 
             hjust = 1.35, fontface = "bold", size = 4)
   
-  
+#violin plot of incomes and gender -trying to add summary statistics 
+violin_data <- filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"))
+
+ggplot(data = violin_data) +
+  geom_violin(aes(y=win_income, x=applicant_sex_name, fill=outcome)) + 
+  scale_y_log10(expand=c(0,0)) + 
+  scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
+  theme(text = element_text(family = "Meiryo"), 
+        panel.background = element_rect(fill = '#F2F5F2'),
+        panel.grid.major = element_line(color = "#404040"), 
+        panel.grid.minor = element_blank()) +
+  labs(fill = "Outcome", x = "Gender of Applicant", 
+       y = "Income (in $1,000s, Log Scale)", 
+       title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
+       subtitle = "Income by Gender, grouped by Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
+
+#trying with treemapify
+data_tree <- hmda_ny_5yrs %>% group_by(boro, race_alternative) %>% 
+  summarise(n = n())
+treemap_coords <- treemapify(data_tree, area = "n", subgroup2 = "race_alternative", subgroup = "boro")
+ggplot(treemap_coords)
+
+ggplot(hmda_ny_5yrs, aes(area =count, subgroup = boro, label = race_alternative)) +
+  geom_treemap()

@@ -1,8 +1,12 @@
 ---
-title: "hmda_explore.R"
+title: "An Exploration of NYC Home Mortgage Disclosure Act Data"
 output: 
   html_document: 
     code_folding: hide
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
 ---
 
 ```{r setup, include=FALSE}
@@ -66,7 +70,7 @@ hmda_ny_5yrs <- hmda_ny_5yrs %>% left_join(crosswalk, by = c("census_tract_numbe
 rm(crosswalk)
 ```
 
-##Home Mortgage Disclosure Act Data - Exploration in New York City 
+#Overview 
 
 Home Mortgage Disclosure Act data provides insight into which loans are approved and denied and includes details on loan characteristics such as use, amount, outcome, and on applicant characteristics such as race, income, and census tract. These graphs attempt to understand why some people receive loans while others do not, where most loans are approved and denied, and more. 
 
@@ -99,7 +103,7 @@ census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4
 ggplot() + 
   geom_sf(data = census_tract_merged,
                aes(fill = breaks), color = "white", lwd = 0) +
-  labs(title = "Most census tracts have approval rates between \n60% and 80%", subtitle= "The highest approval rates are found \nin Queens, while rates dip below 40% in historically \ndisdvantaged parts of the city, such as East Brooklyn"
+  labs(title = "Most census tracts have approval rates between \n60% and 80%", subtitle= "The highest approval rates are found \nin Queens, while rates dip below 40% in historically \ndisdvantaged parts of the city, such as East Brooklyn",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
@@ -114,7 +118,7 @@ ggplot() +
 
 The map above and the next map create an understanding of loan approval rates across census tracts. While there are clearly differences in loan approval rates across the city, there is not a clear distinction between certain areas with higher approval rates, for example, there are high approval tracts in Brooklyn and the Bronx that are not know for being high income (as one might expect). In terms of low approval rates, this graph shows us that parts of East Brookyn, like Brownsville have lower rates than average. 
 
-```{r, error = FALSE, message = FALSE, warning = FALSE}
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.width = 11}
 #approval rates by race by census tract
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
@@ -233,13 +237,13 @@ ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_m
         axis.title=element_blank(),                      
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
-        legend.position = c(.8, .3), legend.background = element_blank(),
+        legend.position = c(.2, .8), legend.background = element_blank(),
         text = element_text(family = "Meiryo"),
         axis.ticks = element_blank()) + labs(title = "NEED TO CONSIDER THAT SOME PLACES WILL ALWAYS GET MORE APPS - MAYBE MAKE A PERCENT INCREASE" ,fill = "Change in Number of Loan Applications")
 
 #CARTOGRAM WITH NTA
 #install.packages("cartogram")
-library(cartogram)
+#library(cartogram)
 
 #merge nta shapefile and a column of data to be used for sizing
 # for_cartogram <- num_apps_change_bk %>% right_join(nta_shape, by = "ntaname") %>% st_as_sf()
@@ -248,7 +252,7 @@ library(cartogram)
 ```
 
 
-```{r, include = FALSE, eval = FALSE}
+```{r,error = FALSE, message = FALSE, warning = FALSE}
 #map with income to loan amount ratios by census tract
 #general rule - can afford to finance a mortgage between 2-2.5x gross yearly income
 
@@ -273,11 +277,20 @@ test <- hmda_ny_5yrs %>% filter(as_of_year == 2017, co_applicant_ethnicity_name 
 test$breaks <- cut(test$mean_loan_income_ratio, c(0, 2, 3, 4, 240))
   
 ggplot(test) + 
-  geom_sf(aes(fill = breaks), color = "white", lwd = 0) +  scale_fill_manual(values = c("#1a9641", "#a6d96a", '#e27a48', '#cc4c02'))
+  geom_sf(aes(fill = breaks), color = "white", lwd = 0) +  scale_fill_manual(values = c("#1a9641", "#a6d96a", '#e27a48', '#cc4c02')) + theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        legend.position = c(.3, .7),
+        legend.background = element_blank(),
+        text = element_text(family = "Meiryo"),
+        axis.ticks = element_blank()) + labs(title = "Most census tracts have an average loan-to-income ratio over 3.", subtitle = "The general rule is that one can finance a mortgage between 2-2.5 times \ntheir annual income. This means that many applicants are \nattempting to borrow outside of their means.", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", fill = "Loan-to-income ratio")
 
 # This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 ```
 
+
+Because the HMDA data does not allow for a calculation of payment to income ratio, which is regularly used to measure the ability of an applicant to pay off the loan on their current income, I calculated a loan-to-income ratio. According to investopedia.com an applicant can afford a loan around 2-2.5x the amount of the applicant's income. I used this information to look at what parts of the city have applicants within and below this metric. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 apps_per_year_outcome_race <- hmda_ny_5yrs %>% 
