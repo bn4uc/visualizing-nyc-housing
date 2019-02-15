@@ -182,7 +182,7 @@ nta_merged$breaks <- cut(nta_merged$approval_rate, c(40, 50, 60, 70, 80))
 ggplot() + 
   geom_sf(data = nta_merged,
                aes(fill = breaks), color = "white", lwd = 0) +
-  labs(title = "Most Neighborhoods have Loan Approval Rates between \n50% and 60% ", subtitle= "Loan Approval Rates by Neighborhood Tabulation Area (NTA)",
+  labs(title = "Most Neighborhoods have Loan Approval Rates between \n50% and 60% ", subtitle= "Percent of Loan Applications Approved by Neighborhood Tabulation Area (NTA)",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
@@ -192,7 +192,7 @@ ggplot() +
         legend.position = c(0.25,.75),
         text = element_text(family = "Meiryo"), 
         plot.title = element_text(size = 20),
-        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nLoan Applications \nApproved")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f"))
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nApplications \nApproved (%)")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f"))
 ```
 
 The highest approval rates are in Bay Terrace/Clearview and Forest Hills, Queens, and Prospect Heights, Brooklyn. While Bay Terrace and Prospect Heights are known as affluent neighborhoods, Forest Hills is known for being diverse and middle-income. The lowest approval rates are found low-income neighborhoods such as Far Rockaway, Queens; Parkchester, Bronx; and Starrett City, Brooklyn. 
@@ -221,7 +221,7 @@ nta_tract_merged$breaks <- cut(nta_tract_merged$approval_rate, c(0, 20, 40, 60, 
 #plot- approval rates by census block #### 
 ggplot(data = nta_tract_merged) + 
   geom_sf(data = nta_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
-  labs(title = "Asians, Whites, and Unknown Group have \nHigh Loan Approval Rates across New York City", subtitle = "Approval Rates by Neighborhood Tabulation Area (NTA) for each Race",
+  labs(title = "Asians, Whites, and Unknown Group have \nHigh Loan Approval Rates across New York City", subtitle = "Percent of Loan Applications Approved by Neighborhood Tabulation Area (NTA) by Race",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
@@ -231,7 +231,7 @@ ggplot(data = nta_tract_merged) +
         plot.subtitle = element_text(face = "italic"),
         text = element_text(family = "Meiryo"), 
         plot.title = element_text(size = 20),
-        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of Applications Approved (%)")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
 
 ```
 
@@ -271,8 +271,88 @@ quartile_race_year_outcome %>%
   labs(title = "Loan Approval Rates in Brooklyn for Low-to-Middle Income Blacks \nand Other Group has been Decreasing, while most other Races and Quartiles have Steady Rates", 
        subtitle = "Approval Rates per Year by Income Quartiles and Race",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017",
-       color = "Outcome", x = "Year", y = "Approval Rate") + 
+       color = "Outcome", x = "Year", y = "Percent of Applications (%)") + 
   geom_rect(data = highlights, 
             aes(xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf), 
             fill = '#0D177F', alpha= .2)
+```
+
+
+```{r, error = FALSE, message = FALSE, warning = FALSE}
+#approval rates for low income applicants, by NTA faceted by year 
+apps_outcome_Q1_nta <- hmda_ny_5yrs %>% 
+  filter(income_bins == "Income Quartile 1") %>% 
+  group_by(ntacode, as_of_year, outcome) %>% 
+  summarise(outcome_tot = n())
+
+apps_total_Q1_nta <- hmda_ny_5yrs %>% 
+  filter(income_bins == "Income Quartile 1") %>% 
+  group_by(ntacode, as_of_year) %>% 
+  summarise(tot_apps = n())
+
+approval_rate_5yr <- apps_outcome_Q1_nta %>% 
+  left_join(apps_total_Q1_nta, by = c("ntacode", "as_of_year")) %>%
+  filter(outcome == "Approved") %>% 
+  mutate(approval_rate = outcome_tot/tot_apps*100)
+
+approval_rate_5yr$breaks <- cut(approval_rate_5yr$approval_rate, c(0, 20, 40, 60, 80, 100))
+
+#need to merge back with census hmda and then merge that with census tracts
+approval_rate_5yr %>% 
+  left_join(nta_shape, by = "ntacode") %>% 
+  ggplot() + geom_sf(aes(fill = breaks), lwd = 0) + 
+  facet_wrap(~as_of_year) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02')) + 
+  guides(fill=guide_legend(title="Approval Rate (%)")) +
+  theme(axis.text=element_blank(),                      
+        axis.title=element_blank(),                      
+        panel.background = element_rect(fill = "#ffffff", color = NA),
+        axis.line = element_blank(),
+        legend.position = c(.8, .3), 
+        legend.background = element_blank(),
+        plot.subtitle = element_text(face = "italic"),
+        text = element_text(family = "Meiryo"), 
+        axis.ticks = element_blank()) + labs(title ="Approval Rates for Low-to-Middle Income Applicants Decline \ndecline in most Boroughs, while Rates on Queens and Staten Island remain High", subtitle = "Approval Rates for Applicants with Incomes below $76,000/year", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+```
+
+#graph on loan to income ratio 
+
+#graph on loan approval rates over time (maybe move this up)
+
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height=6}
+#regroup denial reasons 
+hmda_ny_5yrs$denial_reason_alt <- hmda_ny_5yrs$denial_reason_name_1
+
+hmda_ny_5yrs$denial_reason_alt[which(hmda_ny_5yrs$denial_reason_alt %in% 
+          c("Employment history", "Insufficient cash (downpayment, closing costs)","Mortgage insurance denied","Unverifiable information"))] <- "Other"
+
+num_denied_by_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Denied", !is.na(denial_reason_alt)) %>%
+  group_by(race_alternative) %>% 
+  summarise(tot_apps_denied = n())
+
+denial_reasons_race <- hmda_ny_5yrs %>% 
+  filter(outcome == "Denied", !is.na(denial_reason_alt)) %>% 
+  group_by(race_alternative, denial_reason_alt) %>% 
+  summarise(denied_by_reason = n())
+
+#denial reasons rates race ####
+denial_reasons_race %>% 
+  left_join(num_denied_by_race, by = "race_alternative") %>%
+  mutate(denial_rate = denied_by_reason/tot_apps_denied) %>% 
+  ggplot() + 
+  geom_bar(aes(x = race_alternative, 
+               y = denial_rate, 
+               fill = denial_reason_alt),
+           stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        text = element_text(family = "Meiryo"), 
+        panel.background = element_rect(fill = '#F2F5F2'), 
+        axis.ticks = element_blank(),
+        axis.line = element_blank(), 
+        panel.grid = element_blank()) +
+  scale_x_discrete(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) +
+  labs(title = "Black Applicants and Other (Native American and Pacific Islanders) Applicants Denials are more frequently due to Credit History, while this is an Infrequent Denial Reason for Whites and Asians", 
+       subtitle = "Distribution of Denial Reasons by Race", 
+       caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017", 
+       x = "Applicant Race", y = "Denial Rate", fill = "Denial Reason") + scale_fill_discrete(name = "Denial Reason")  + scale_fill_manual(values = c('#E8291A','#FFE11A', '#004358', '#1f8a70', '#BEDB39',  '#FD7400', '#BF4182', '#580F45', '#0D177F'))
 ```
