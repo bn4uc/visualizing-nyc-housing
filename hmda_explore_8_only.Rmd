@@ -181,35 +181,35 @@ ggplot() +
         plot.subtitle = element_text(face = "italic"),
         legend.position = c(0.25,.75),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nLoan Applications \nApproved")) + scale_fill_manual(values = c('#ffffd4','#f7c48f','#e68a4d', '#cc4c02'))
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nLoan Applications \nApproved")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f"))
 ```
 
 The highest approval rates are in Bay Terrace/Clearview and Forest Hills, Queens, and Prospect Heights, Brooklyn. While Bay Terrace and Prospect Heights are known as affluent neighborhoods, Forest Hills is known for being diverse and middle-income. The lowest approval rates are found low-income neighborhoods such as Far Rockaway, Queens; Parkchester, Bronx; and Starrett City, Brooklyn. 
 
-```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.width = 15, fig.height=15}
-#approval rates by race by census tract
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.height= 15}
+#approval rates by race by nta
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
-  group_by(census_tract_number, applicant_race_name_1) %>% 
+  group_by(ntaname, applicant_race_name_1) %>% 
   summarise(total_approved = n())
 
 df_for_chloropleth_race_approval <- hmda_ny_5yrs %>% 
-  group_by(census_tract_number, applicant_race_name_1) %>% 
+  group_by(ntaname, applicant_race_name_1) %>% 
   summarise(total_apps = n()) %>% 
   left_join(approval_counts_by_race, 
-            by = c("census_tract_number", "applicant_race_name_1")) %>%
-  mutate(approval_rate = total_approved/total_apps)
+            by = c("ntaname", "applicant_race_name_1")) %>%
+  mutate(approval_rate = total_approved/total_apps*100)
 
-census_tract_merged <- left_join(df_for_chloropleth_race_approval,census_tracts,
-    by = c("census_tract_number" ="ct2010")) %>% 
+nta_tract_merged <- left_join(df_for_chloropleth_race_approval,nta_shape,
+    by = "ntaname") %>% 
       st_as_sf()
 
 #dealing with ggplot
-census_tract_merged$breaks <- cut(census_tract_merged$approval_rate, c(0, .2, .4, .6, .8, 1)) 
+nta_tract_merged$breaks <- cut(nta_tract_merged$approval_rate, c(0, 20, 40, 60, 80, 100)) 
 
 #plot- approval rates by census block #### 
-ggplot(data = census_tract_merged) + 
-  geom_sf(data = census_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
+ggplot(data = nta_tract_merged) + 
+  geom_sf(data = nta_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
   labs(title = "Asians and Whites have high loan approval rates across New York City", subtitle = "Other racial groups have lower rates",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme(axis.text=element_blank(),                      
@@ -218,7 +218,6 @@ ggplot(data = census_tract_merged) +
         axis.line = element_blank(),
         legend.position = "bottom",
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02'))
-
+        axis.ticks = element_blank()) + guides(fill=guide_legend(title="Approval Rate")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
 
 ```
