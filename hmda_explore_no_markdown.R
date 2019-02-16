@@ -835,3 +835,11 @@ hmda_ny_5yrs %>% group_by(boro, income_bins) %>%
           palette = c( '#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70'),
           fontcolor.labels= '#F2F5F2', border.col = '#F2F5F2', 
           fontsize.title = 24)
+
+#violin plots of loan to income ratio #these dont work 
+ggplot(hmda_ny_5yrs %>% filter(as_of_year == 2017)) + 
+  geom_violin(aes(y = win_loan_income_ratio, x = outcome)) + 
+  ylim(c(0, 20)) + stat_summary(aes(x = outcome, y = win_loan_income_ratio), fun.y = "mean", geom = "line") + coord_flip() + geom_vline(yintercept = 3)
+
+ggplot(hmda_ny_5yrs %>% filter(as_of_year == 2017, applicant_sex_name %in% c("Female", "Male")), aes(y = win_loan_income_ratio, x = applicant_sex_name)) + 
+  geom_violin() + ylim(c(0,100))

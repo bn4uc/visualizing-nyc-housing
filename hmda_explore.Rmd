@@ -256,7 +256,6 @@ ggplot() + geom_sf(data = num_apps_change_bk, aes(fill = breaks))+  scale_fill_m
 #map with income to loan amount ratios by census tract
 #general rule - can afford to finance a mortgage between 2-2.5x gross yearly income
 
-hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(income_as_part_of_loan = applicant_income_000s/loan_amount_000s) 
 
 hmda_ny_5yrs <- hmda_ny_5yrs %>% 
   mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
@@ -288,10 +287,14 @@ ggplot(test) +
 # This map looks at approval rates for Black and American American loan applicants by census tracts. When compared to the previous graph, it is clear the Black approval rates are much lower than the average approval rates in most of the census tracts. Many of the tracts that had rates between 50-75 percent, are now in the 25-50 percent range. This indicates that Black applicants receive below average loan approval rates in many neighborhoods. Understanding the cause of this outcome would be helpful in improving socioceonomic equality, as homeownership is an important step towards gaining wealth. 
 
 
-#violin plots 
-ggplot(hmda_ny_5yrs %>% filter(as_of_year == 2017)) + 
-  geom_violin(aes(y = win_loan_income_ratio, x = outcome)) + 
-  ylim(c(0, 20)) + stat_summary(aes(x = outcome, y = win_loan_income_ratio), fun.y = "mean", geom = "line") + coord_flip() + geom_vline(yintercept = 3)
+#ridges chart of loan to income ratio
+install.packages("ggridges")
+library(ggridges)
+
+ggplot(hmda_ny_5yrs, aes(x = win_loan_income_ratio,
+                         y = race_alternative, fill = race_alternative)) +
+  geom_density_ridges() + 
+  xlim(c(0,15)) + geom_vline(xintercept = 2.5) + geom_text(aes(x = 2.5, label = "Safe Upper Limit"), y = 0) + theme()
   
 ```
 

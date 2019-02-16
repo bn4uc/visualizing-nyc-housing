@@ -23,6 +23,7 @@ library(ggrepel)
 library(statar)
 library(sf)
 library(treemapify)
+library(ggridges)
 ```
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, include=FALSE, cache = TRUE}
@@ -73,6 +74,20 @@ hmda_ny_5yrs <-  hmda_ny_5yrs %>% mutate(boro =
                      ifelse(county_name == "Bronx County", "Bronx",
                             ifelse(county_name == "Richmond County", 
                                    "Staten Island", NA))))))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_loan_amount = winsorize(loan_amount_000s, probs = c(.01, .99)))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% 
+  mutate(win_income = winsorize(applicant_income_000s, probs = c(.01, .99)))
+
+hmda_ny_5yrs <- hmda_ny_5yrs %>% mutate(win_loan_income_ratio = win_loan_amount/win_income)
+
+#regroup denial reasons 
+hmda_ny_5yrs$denial_reason_alt <- hmda_ny_5yrs$denial_reason_name_1
+
+hmda_ny_5yrs$denial_reason_alt[which(hmda_ny_5yrs$denial_reason_alt %in% 
+          c("Employment history", "Insufficient cash (downpayment, closing costs)","Mortgage insurance denied","Unverifiable information"))] <- "Other"
 
 census_tracts <- st_read("/Volumes/SPACESHIP/data_viz/data_scripts/visualizing-nyc-housing/2010_Census_Tracts", "geo_export_6e8e8432-67b3-4029-a002-fa59bbd3d5d3")
 
@@ -317,15 +332,20 @@ approval_rate_5yr %>%
 ```
 
 #graph on loan to income ratio 
-
+```{r}
+#ridges plot of loan to income ratio
+ggplot(hmda_ny_5yrs, aes(x = win_loan_income_ratio, y = race_alternative,
+          fill = race_alternative)) +
+  geom_density_ridges() + geom_vline(xintercept = 2.5) + xlim(c(0,15)) + 
+  theme(plot.title = element_text(size = 18), 
+        plot.subtitle = element_text(face = "italic"),
+        text = element_text(family = "Meiryo")) + 
+  scale_fill_manual(values = 
+                      c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) + guides(fill = FALSE)
+```
 #graph on loan approval rates over time (maybe move this up)
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height=6}
-#regroup denial reasons 
-hmda_ny_5yrs$denial_reason_alt <- hmda_ny_5yrs$denial_reason_name_1
-
-hmda_ny_5yrs$denial_reason_alt[which(hmda_ny_5yrs$denial_reason_alt %in% 
-          c("Employment history", "Insufficient cash (downpayment, closing costs)","Mortgage insurance denied","Unverifiable information"))] <- "Other"
 
 num_denied_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Denied", !is.na(denial_reason_alt)) %>%
