@@ -106,11 +106,12 @@ rm(crosswalk)
 
 #Overview 
 
-Homeownership is one of the most important ways of acculating wealth. In New York City, proprty values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group, allows us to better understand the way opportunities within the city are changing.
+Homeownership is one of the most important ways of acculating wealth. In New York City, property values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group allows us to better understand the way opportunities within the city are changing.
 
 ##Loan Applicant Characteristics 
 
-```{r, fig.width=10, fig.height=9, fig.align="center"}
+The following graphs breakdown applicants by race, income, and gender, to understand what type of people are applying for loans in New York City. 
+```{r,error = FALSE, message = FALSE, warning = FALSE,  fig.width=10, fig.height=9, fig.align="center"}
 #Loan applications are split pretty evenly between Manhattan, Brooklyn, and Queens, with White applicants representing a large share of the applications. The Unknown category is made up of applicants who did not disclose their race in their loan applications. Disparities in incomes between boroughs are shown in the second graph. 
 
 #treemap for counties and race 
@@ -129,7 +130,7 @@ ggplot(data_tree, aes(area =n, label = race_alternative, subgroup = boro, fill =
   theme(text = element_text(family = "Meiryo"), 
         legend.position = "none", plot.title = element_text(size = 18))
 
-data_tree <- hmda_ny_5yrs %>% group_by(boro, income_bins) %>% 
+data_tree <- hmda_ny_5yrs %>% filter(income_bins != "Unknown") %>% group_by(boro, income_bins) %>% 
   summarise(n = n())
 
 ggplot(data_tree, aes(area =n, label = income_bins, subgroup = boro, fill = income_bins)) +
@@ -139,11 +140,12 @@ ggplot(data_tree, aes(area =n, label = income_bins, subgroup = boro, fill = inco
                     fontface = "italic") + 
   geom_treemap_subgroup_text(place = "topleft", color = '#F2F5F2') + 
   scale_fill_manual(values = 
-                      c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) +
+                      c('#FD7400', '#BF4182', '#580F45', '#0D177F')) +
   labs(title = "Loan Applicants Organized by Borough and \nIncome Quartiles HMDA Data 2013-2017") + 
   theme(text = element_text(family = "Meiryo"), 
         legend.position = "none", plot.title = element_text(size = 18))
 ```
+
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="center"}
 #looking at differences in approval rates by male/female
@@ -168,6 +170,8 @@ ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"), co_appli
 ```
 
 
+The graph above showcases gender disparities in loan applications. Men apply with higher incomes, and their average income regardless of the outcomes of their applications are higher than those of women applicants. 
+
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
 #ridges plot of loan to income ratio
 breaks = c(seq(0, 15, by=2.5))
@@ -185,6 +189,8 @@ ggplot(hmda_ny_5yrs %>% filter(co_applicant_ethnicity_name== "No co-applicant"),
                       c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) + guides(fill = FALSE) + labs(title = "Historically Disadvantaged Groups (Black, Other) \nhave a Higher Concentration of \nLoan-to-Income Ratios over 2.5", subtitle = "Investopedia states that a loan amount below 2.5 times \nan applicant's annual income is affordable to the applicant", x = "Loan-to-Income Ratio", y = "Race", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
+
+Despite not being able to calculate payment-to-income (PTI) ratio, a commonly used metric for understanding loan affordability, here I calculate a loan-to-income ratio. The distribution or ratios for disadvantaged groups (Black and Other) shows a greater density of ratios above 2.5, while White applicants have a more bell-curve shaped density. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height = 10}
 #differences in outcome by loan applications, income, loan amount, race 
@@ -209,9 +215,12 @@ hmda_ny_5yrs %>%
         axis.ticks = element_blank())
 ```
 
+
+The graph above tries to understand the relationship between loan amount and income through a localized regression line. It shows how for an applicant with a $100,000 income, the associated loan amount is different for each race. White applicants receive, on average, a \$250,000 loan, while all other groups receive higher loan values. This may suggest that White applicants are able to have higher downpayments, and thus lower loan amounts, or that historically disadvantaged groups seek less afforable loan amounts. 
+
 ##Outcomes of Loan Applications
 
-```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="left"}
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align="left", include = FALSE, eval = FALSE}
 #approval rates by nta
 #number of loans apps by nta
 apps_by_nta <- hmda_ny_5yrs %>% 
@@ -253,10 +262,10 @@ ggplot() +
         axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of \nApplications \nApproved (%)")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f"))
 ```
 
-The highest approval rates are in Bay Terrace/Clearview and Forest Hills, Queens, and Prospect Heights, Brooklyn. While Bay Terrace and Prospect Heights are known as affluent neighborhoods, Forest Hills is known for being diverse and middle-income. The lowest approval rates are found low-income neighborhoods such as Far Rockaway, Queens; Parkchester, Bronx; and Starrett City, Brooklyn. 
+An average, for the city as a whole, 65% of loan applications are approved. The following graphs looks at how this percent differs between racial groups and neighborhoods.  
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.height= 15}
-#approval rates by race by nta facet map with race (MAYBE REPLACE ONE ABOVE)
+#approval rates by race by nta facet map with race
 approval_counts_by_race <- hmda_ny_5yrs %>% 
   filter(outcome == "Approved") %>% 
   group_by(ntaname, applicant_race_name_1) %>% 
@@ -292,6 +301,10 @@ ggplot(data = nta_tract_merged) +
         axis.ticks = element_blank()) + guides(fill=guide_legend(title="Percent of Applications Approved (%)")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
 
 ```
+
+
+The graph above shows a clear difference in loan rates by race for different neighborhoods. Black applicants have approval rates between 40-60% in most neighborhoods, while White and Asian applicants have approval rates between 80-100% in most neighborhoods. 
+
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.align = "center", fig.height=10, fig.width=11}
 #loan application outcome rates by race and year (facet_grid)
@@ -373,7 +386,10 @@ approval_rate_5yr %>%
         axis.ticks = element_blank()) + labs(title ="Approval Rates for Low-to-Middle Income Applicants \nDecline in most Boroughs, while Rates on Queens \nand Staten Island remain High", subtitle = "Approval Rates for Applicants with Incomes below $76,000/year", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
+Low-to-middle class residents are having a harder time remaining in the city as rents and property values rise. The graph above shows how approval rates between 40-60% for low-to-middle-income applicants were once spread across the city, and are now concentrated in a few neighborhoods and boroughs, including Queens and Staten Island. 
 
+
+The following graph provides an understanding of why different groups are being denied for loans. Historically disadvantaged groups, such as Black and Other applicants, have a much higher chance of being denied because of their credit history, while White and Asian applicants are more frequently denied for an insufficient debt-to-income ratio. 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height=6}
 
