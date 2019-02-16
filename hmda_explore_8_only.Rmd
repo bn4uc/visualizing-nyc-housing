@@ -157,16 +157,15 @@ ggplot(filter(hmda_ny_5yrs, applicant_sex_name %in% c("Female","Male"), co_appli
   scale_fill_manual(values = c('#1f8a70', '#E8291A', '#FFE11A')) + 
   theme(text = element_text(family = "Meiryo"), 
         panel.background = element_rect(fill = '#F2F5F2'),
-        panel.grid.major = element_line(color = "#404040"),
         plot.subtitle = element_text(face = "italic"),
         panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(color = "#404040"),
         plot.title = element_text(size = 18)) +
   labs(fill = "Outcome", x = "Gender of Applicant", 
        y = "Income (in $1,000s, Log Scale)", 
        title = "On Average, Male Applicants have Higher Incomes \nthan Female Applicants", 
        subtitle = "Income by Gender, grouped by Loan Outcome", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") 
 ```
-
 
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE}
@@ -178,16 +177,16 @@ ggplot(hmda_ny_5yrs %>% filter(co_applicant_ethnicity_name== "No co-applicant"),
   geom_density_ridges() + geom_vline(xintercept = 2.5) + scale_x_continuous(limits = c(0, 15), breaks = breaks) + 
   theme(plot.title = element_text(size = 18), 
         plot.subtitle = element_text(face = "italic"),
-        text = element_text(family = "Meiryo"), 
-        panel.grid.minor = element_blank()) + 
+        text = element_text(family = "Meiryo"),
+        panel.background = element_rect(fill = '#F2F5F2'),
+        panel.grid.minor = element_blank(), 
+        axis.ticks = element_blank()) + 
   scale_fill_manual(values = 
                       c('#FD7400', '#BF4182', '#580F45', '#0D177F', '#1f8a70')) + guides(fill = FALSE) + labs(title = "Historically Disadvantaged Groups (Black, Other) \nhave a Higher Concentration of \nLoan-to-Income Ratios over 2.5", subtitle = "Investopedia states that a loan amount below 2.5 times \nan applicant's annual income is affordable to the applicant", x = "Loan-to-Income Ratio", y = "Race", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
 
-
-
-```{r}
+```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height = 10}
 #differences in outcome by loan applications, income, loan amount, race 
 
 hmda_ny_5yrs %>% 
@@ -196,16 +195,17 @@ hmda_ny_5yrs %>%
   geom_point(alpha = .2, color = 'black') + 
   geom_smooth(color = '#1f8a70') + 
   facet_wrap(~race_alternative) + 
-  scale_x_continuous(breaks = c(0,350,500,750,1000)) + 
+  scale_x_continuous(breaks = c(0,250,350,500,750,1000)) + 
   geom_hline(yintercept = 100, color = '#FD7400') + 
   geom_vline(xintercept = 350, color = '#FD7400') + 
-  labs(title = "Trends in Loan Amounts and Applicant Income suggest that for Applicants with the Same Income, Whites Apply for Smaller Loans than other Races", subtitle = "Approved Loans for Applicants with Incomes below $200,000 and Loan Amounts below $1,000,000, by Race \nYellow lines show an applicant with an income of $100,000 and a loan amount of $350,000. \nOn Average, a White applicant with an income of $100,000 is receiving a $350,000 loan, however, \na non-white applicant with same income is receiving a much larger loan", 
+  labs(title = "Trends in Loan Amounts and Applicant Income \nsuggest that for Applicants with the Same Income, \nWhites Receive Smaller Loans than other Races", subtitle = "Approved Loans for Applicants with Incomes below $200,000 and \nLoan Amounts below $1,000,000, by Race \n\nFor comparison, the orange lines show an income of $100,000 and \na loan amount of $350,000. On Average, a White applicant \nwith an income of $100,000 is receiving a $350,000 loan, \nhowever, a non-white applicant with same income \nis receiving a much larger loan", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017",
        y = "Applicant Income", x = "Loan Amount") + 
   theme(legend.position = "bottom", plot.title = element_text(size = 18), 
         plot.subtitle = element_text(face = "italic"),
         text = element_text(family = "Meiryo"), 
         panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = '#F2F5F2'),
         axis.ticks = element_blank())
 ```
 
@@ -370,12 +370,10 @@ approval_rate_5yr %>%
         plot.title = element_text(size = 18), 
         plot.subtitle = element_text(face = "italic"),
         text = element_text(family = "Meiryo"), 
-        axis.ticks = element_blank()) + labs(title ="Approval Rates for Low-to-Middle Income Applicants Decline \nin most Boroughs, while Rates on Queens and Staten \nIsland remain High", subtitle = "Approval Rates for Applicants with Incomes below $76,000/year", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
+        axis.ticks = element_blank()) + labs(title ="Approval Rates for Low-to-Middle Income Applicants \nDecline in most Boroughs, while Rates on Queens \nand Staten Island remain High", subtitle = "Approval Rates for Applicants with Incomes below $76,000/year", caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017")
 ```
 
 
-
-#graph on loan approval rates over time (maybe move this up)
 
 ```{r, error = FALSE, message = FALSE, warning = FALSE, fig.height=6}
 
