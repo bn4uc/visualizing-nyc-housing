@@ -201,7 +201,7 @@ hmda_ny_5yrs %>%
   geom_smooth(aes(color = race_alternative)) + scale_color_manual(values = c('#FD7400', '#BF4182', '#580F45', '#0D177F')) + labs(title = "Trends in Loan Amounts and Applicant Income \nsuggest that for Applicants with the Same Income, \nWhites Receive Smaller Loans than other Races", subtitle = "Approved Loans for Applicants with Incomes below $200,000 and \nLoan Amounts below $1,000,000, by Race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017",
        y = "Applicant Income", x = "Loan Amount", color = "Race") + theme_bn + 
-  theme(legend.position = c(.3, .8),
+  theme(legend.position = c(.1, .8),
         legend.background = element_blank(), 
         panel.background = element_rect(fill = '#F2F5F2'))
 ```
