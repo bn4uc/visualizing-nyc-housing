@@ -203,7 +203,7 @@ hmda_ny_5yrs %>%
        y = "Applicant Income", x = "Loan Amount", color = "Race") + theme_bn + 
   theme(legend.position = c(.1, .8),
         legend.background = element_blank(), 
-        panel.background = element_rect(fill = '#F2F5F2'))
+        panel.background = element_rect(fill = '#F2F5F2')) + scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0))
 ```
 
 
@@ -272,11 +272,10 @@ nta_tract_merged <- left_join(df_for_chloropleth_race_approval,nta_shape,
       st_as_sf()
 
 #dealing with ggplot
-nta_tract_merged$breaks <- cut(nta_tract_merged$approval_rate, c(0, 20, 40, 60, 80, 100)) 
 
 #plot- approval rates by census block #### 
 ggplot(data = nta_tract_merged) + 
-  geom_sf(data = nta_tract_merged, aes(fill = breaks), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
+  geom_sf(data = nta_tract_merged, aes(fill = approval_rate), color = "white", lwd = 0) + facet_wrap(~applicant_race_name_1, ncol = 2) + 
   labs(title = "Asians, Whites, and Unknown Group have \nHigh Loan Approval Rates across New York City", subtitle = "Percent of Loan Applications Approved by Neighborhood Tabulation Area (NTA) by Race",
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017") + 
   theme_bn + 
@@ -284,7 +283,7 @@ ggplot(data = nta_tract_merged) +
         axis.title=element_blank(),                      
         panel.background = element_rect(fill = "#ffffff", color = NA),
         axis.line = element_blank(),
-        legend.position = "bottom") + guides(fill=guide_legend(title="Percent of Applications Approved (%)")) + scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#e34a33", "#b30000"))
+        legend.position = "bottom") + guides(fill=guide_legend(title="Percent of Applications Approved (%)")) + scale_fill_gradient(low = "#fef0d9", high ="#b30000")
 
 ```
 
@@ -350,13 +349,12 @@ approval_rate_5yr <- apps_outcome_Q1_nta %>%
   filter(outcome == "Approved") %>% 
   mutate(approval_rate = outcome_tot/tot_apps*100)
 
-approval_rate_5yr$breaks <- cut(approval_rate_5yr$approval_rate, c(0, 20, 40, 60, 80, 100))
 
 #need to merge back with census hmda and then merge that with census tracts
 approval_rate_5yr %>% 
   left_join(nta_shape, by = "ntacode") %>% 
-  ggplot() + geom_sf(aes(fill = breaks), lwd = 0) + 
-  facet_wrap(~as_of_year) + scale_fill_manual(values = c('#ffffd4', '#fdd2c0', '#f3a683', '#e27a48', '#cc4c02')) + 
+  ggplot() + geom_sf(aes(fill = approval_rate), lwd = 0) + 
+  facet_wrap(~as_of_year) + scale_fill_gradient(low = '#ffffd4', high ='#cc4c02') + 
   guides(fill=guide_legend(title="Approval Rate (%)")) + theme_bn + 
   theme(axis.text=element_blank(),                      
         axis.title=element_blank(),                      
