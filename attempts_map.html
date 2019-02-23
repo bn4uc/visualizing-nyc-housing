@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Mapping with D3</title>
+	<script type="text/javascript" src="../d3.js"></script>
+    <script src='nta.js'></script>
+</head>
+<body>
+  <script>
+var width = 700;
+var height = 580;
+
+// var color = d3.scaleThreshold()
+//     .domain(d3.range(2, 10))
+//     .range(d3.schemeBlues[9]);
+
+//d3.csv("hmda17_ny_nta.csv", function(d) {hmda17_ny_nta.set(d.id, +d.rate); })
+// .attr("fill", function(d) { return color(d.rate = unemployment.get(d.id)); }) this will be appended to svg 
+
+var svg = d3.select('body')
+  .append('svg')
+  .attr('width', width)
+  .attr('height', height);
+
+var g = svg.append('g');
+
+var albersProjection = d3.geoAlbers()
+  .scale(75000)
+  .rotate([73.94, 0])
+  .center([0, 40.70])
+  .translate([width/2, height/2]);
+
+var geoPath = d3.geoPath()
+    .projection(albersProjection);
+
+g.selectAll('path')
+  .data(nta_json.features)
+  .enter()
+  .append('path')
+  .attr('fill', '#ccc')
+  .attr('d', geoPath);
+
+  </script>
+</body>
+</html>
+        
