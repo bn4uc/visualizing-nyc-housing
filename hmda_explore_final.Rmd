@@ -115,7 +115,7 @@ theme_bn <- theme(
 
 #Overview 
 
-Homeownership is one of the most important ways of acculating wealth. In New York City, property values are high and thus homeownership is out of reach for many.Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group allows us to better understand the way opportunities within the city are changing.
+Homeownership is one of the most important ways of acculating wealth. In New York City, property values are high and thus homeownership is out of reach for many. Using Home Mortgage Disclosure Act data, I explore the demographics of mortgage applicants and the various outcomes of their applications in order to better understand who receives loans and who does not. Looking at how outcomes change over time and by group allows us to better understand the way opportunities within the city are changing.
 
 ##Loan Applicant Characteristics 
 
@@ -200,7 +200,7 @@ hmda_ny_5yrs %>%
   ggplot(aes(x = win_loan_amount, y = win_income)) + 
   geom_smooth(aes(color = race_alternative)) + scale_color_manual(values = c('#FD7400', '#BF4182', '#580F45', '#0D177F')) + labs(title = "Trends in Loan Amounts and Applicant Income \nsuggest that for Applicants with the Same Income, \nWhites Receive Smaller Loans than other Races", subtitle = "Approved Loans for Applicants with Incomes below $200,000 and \nLoan Amounts below $1,000,000, by Race", 
        caption = "Home Mortgage Disclosure Act Data, CFPB, 2013-2017",
-       y = "Applicant Income", x = "Loan Amount", color = "Race") + theme_bn + 
+       y = "Applicant Income (in $1,000s)", x = "Loan Amount (in $1,000s)", color = "Race") + theme_bn + 
   theme(legend.position = c(.1, .8),
         legend.background = element_blank(), 
         panel.background = element_rect(fill = '#F2F5F2')) + scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0))
